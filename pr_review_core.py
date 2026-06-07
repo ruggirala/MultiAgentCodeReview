@@ -86,12 +86,22 @@ def build_pr_report(result: PRReviewResult) -> str:
     return "\n".join(lines) + "\n"
 
 
+_SEVERITY_EMOJI = {
+    "Critical": "🔴",
+    "High": "🟠",
+    "Medium": "🟡",
+    "Low": "⚪",
+}
+
+
 def format_pr_comment(result: PRReviewResult) -> str:
     """
-    Condensed comment body for posting on the PR.
+    Comment body for posting on the PR.
 
-    A summary, not the full report: a per-file findings table plus the
-    Critical/High items spelled out. Truncated to GitHub's size limit.
+    A per-file severity table followed by every finding (all severities) spelled
+    out with its location, description, and suggested fix — so even a clean PR
+    with only Medium/Low findings gets actionable detail, not just counts.
+    Truncated to GitHub's size limit if needed.
     """
     lines: list[str] = []
     lines.append("## 🤖 Multi-Agent Code Review\n")
@@ -112,23 +122,32 @@ def format_pr_comment(result: PRReviewResult) -> str:
             f"| {counts['Medium']} | {counts['Low']} |"
         )
 
-    # Spell out the most important findings.
-    important = []
-    for review in result.reviews:
-        for f in review.state.findings:
-            if f.severity in (Severity.CRITICAL, Severity.HIGH):
-                important.append((review.filename, f))
-    important.sort(key=lambda t: _SEVERITY_ORDER.get(t[1].severity.value, 9))
-
-    if important:
-        lines.append("\n### Top issues\n")
-        for filename, f in important:
-            loc = f"line {f.line}" if f.line else "general"
-            cwe = f" · {f.cwe}" if f.cwe else ""
-            lines.append(
-                f"- **[{f.severity.value}]** `{filename}` ({loc}){cwe} — "
-                f"{f.title}. {f.description}"
+    # Full findings detail, grouped by file, severity-sorted within each file.
+    any_findings = any(r.state.findings for r in result.reviews)
+    if any_findings:
+        lines.append("\n### Findings\n")
+        for review in result.reviews:
+            if not review.state.findings:
+                continue
+            lines.append(f"#### `{review.filename}`\n")
+            ordered = sorted(
+                review.state.findings,
+                key=lambda f: _SEVERITY_ORDER.get(f.severity.value, 9),
             )
+            for f in ordered:
+                loc = f"line {f.line}" if f.line else "general"
+                cwe = f" · {f.cwe}" if f.cwe else ""
+                emoji = _SEVERITY_EMOJI.get(f.severity.value, "")
+                lines.append(
+                    f"- {emoji} **[{f.severity.value}]** "
+                    f"_{f.category.value}_ ({loc}){cwe} — **{f.title}**  "
+                )
+                lines.append(f"  {f.description}")
+                if f.recommendation:
+                    lines.append(f"  _Fix:_ {f.recommendation}")
+            lines.append("")
+    else:
+        lines.append("\n✅ No issues found by the agents.\n")
 
     flagged = any(r.state.needs_human_review for r in result.reviews)
     if flagged:
@@ -138,8 +157,8 @@ def format_pr_comment(result: PRReviewResult) -> str:
         )
 
     lines.append(
-        "\n_Full report, fixed code, and generated tests were produced locally "
-        "by the agent pipeline._"
+        "\n_Full report, fixed code, and generated tests were also produced "
+        "locally by the agent pipeline._"
     )
     lines.append("\n<sub>Automated review — verify before acting on suggestions.</sub>")
 
