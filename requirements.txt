@@ -1,0 +1,30 @@
+# --- Core (local dev: GPT-4o path) ---
+openai>=1.0.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# --- Multi-agent orchestration ---
+langgraph>=0.2.0
+langchain>=0.2.0
+
+# --- Code parsing & static analysis ---
+tree-sitter>=0.21.0
+tree-sitter-languages>=1.10.0
+pylint>=3.0.0
+radon>=6.0.0
+
+# --- Testing ---
+pytest>=8.0.0
+
+# --- GitHub PR integration ---
+# PR review/watcher need a token: GITHUB_TOKEN env (local) or Colab Secret.
+# Fine-grained PAT with Pull requests: R/W + Contents: Read (or classic public_repo).
+requests>=2.31.0
+
+# --- Colab-only: local CodeLlama fallback (heavy, GPU) ---
+# Not required for local GPT-4o development. Install in Colab for the
+# keyless fallback backend:
+#   transformers>=4.40.0
+#   accelerate>=0.30.0
+#   bitsandbytes>=0.43.0
+#   torch

@@ -1,0 +1,25 @@
+# Secrets — NEVER commit
+.env
+
+# Generated review artifacts
+pr_*_review.md
+pr_*_review.zip
+pr_*_fixed.py
+*_review.md
+*_review.zip
+sample_bad_code_fixed.py
+test_sample_bad_code.py
+
+# Watcher state
+.pr_watch_state.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.ipynb_checkpoints/
