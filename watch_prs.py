@@ -34,8 +34,14 @@ import sys
 import time
 from pathlib import Path
 
+import requests
+
 from integrations.github_pr import GitHubError, GitHubPRClient
 from pr_review_core import handle_pr
+
+# Transient errors we recover from in the poll loop instead of crashing.
+# GitHubError covers API 4xx/5xx; RequestException covers network/proxy/DNS.
+_TRANSIENT_ERRORS = (GitHubError, requests.exceptions.RequestException)
 
 # Backoff applied after an errored poll cycle, capped.
 _ERROR_BACKOFF_START = 5
@@ -179,7 +185,7 @@ def main() -> None:
 
                 time.sleep(args.interval)
 
-            except GitHubError as exc:
+            except _TRANSIENT_ERRORS as exc:
                 print(f"[watch] poll error: {exc}; backing off {backoff}s.")
                 time.sleep(backoff)
                 backoff = min(backoff * 2, _ERROR_BACKOFF_MAX)
