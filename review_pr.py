@@ -78,6 +78,16 @@ def main() -> None:
     if result.comment_url:
         print(f"\nComment: {result.comment_url}")
 
+    if result.agent_proposal:
+        ap = result.agent_proposal
+        print(f"\nAgent proposal: status={ap.status}")
+        if ap.agent_branch:
+            print(f"  branch:        {ap.agent_branch}")
+        if ap.workflow_run_url:
+            print(f"  ci run:        {ap.workflow_run_url} ({ap.workflow_conclusion})")
+        if ap.proposed_pr_url:
+            print(f"  follow-up PR:  {ap.proposed_pr_url}")
+
 
 if __name__ == "__main__":
     main()

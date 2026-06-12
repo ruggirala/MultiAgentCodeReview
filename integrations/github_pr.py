@@ -204,6 +204,214 @@ class GitHubPRClient:
         self._raise_for_status(resp)
         return resp.json()
 
+    # --- branches / refs / commits / workflows ---------------------------
+    # Used by the agent-suggested-fixes follow-up-PR feature
+    # (see `agent_pr_proposer.py`).
+
+    def get_branch(
+        self, owner: str, repo: str, branch: str
+    ) -> Optional[dict[str, Any]]:
+        """Return branch metadata, or None if the branch does not exist."""
+        resp = self.session.get(
+            f"{API_ROOT}/repos/{owner}/{repo}/branches/{branch}",
+            timeout=DEFAULT_TIMEOUT,
+        )
+        if resp.status_code == 404:
+            return None
+        self._raise_for_status(resp)
+        return resp.json()
+
+    def create_or_update_ref(
+        self, owner: str, repo: str, branch: str, sha: str, force: bool = False
+    ) -> dict[str, Any]:
+        """
+        Point ``branch`` at ``sha``. Creates the ref if absent, updates if present.
+
+        ``force=True`` allows non-fast-forward updates — required when we reset the
+        agent branch to a new user-PR head SHA after a fresh user commit.
+        """
+        if not self.authenticated:
+            raise GitHubError("Writing refs requires a token with repo write access.")
+        existing = self.get_branch(owner, repo, branch)
+        if existing is None:
+            resp = self.session.post(
+                f"{API_ROOT}/repos/{owner}/{repo}/git/refs",
+                json={"ref": f"refs/heads/{branch}", "sha": sha},
+                timeout=DEFAULT_TIMEOUT,
+            )
+        else:
+            resp = self.session.patch(
+                f"{API_ROOT}/repos/{owner}/{repo}/git/refs/heads/{branch}",
+                json={"sha": sha, "force": force},
+                timeout=DEFAULT_TIMEOUT,
+            )
+        self._raise_for_status(resp)
+        return resp.json()
+
+    def commit_files(
+        self,
+        owner: str,
+        repo: str,
+        branch: str,
+        files: dict[str, str],
+        message: str,
+        parent_sha: str,
+    ) -> str:
+        """
+        Commit a dict of {path: content} on top of ``parent_sha`` and advance
+        ``branch`` to point at the new commit.
+
+        Returns the new commit SHA. Uses the Git Data API (blobs → tree →
+        commit → ref) — same pattern proven in `scripts/make_simple_pr.py`.
+        """
+        if not self.authenticated:
+            raise GitHubError("Committing requires a token with repo write access.")
+
+        # 1. Parent's tree (so unchanged files are inherited).
+        parent = self._get(f"/repos/{owner}/{repo}/git/commits/{parent_sha}").json()
+        base_tree = parent["tree"]["sha"]
+
+        # 2. One blob per file.
+        tree_items = []
+        for path, content in files.items():
+            blob_resp = self.session.post(
+                f"{API_ROOT}/repos/{owner}/{repo}/git/blobs",
+                json={
+                    "content": base64.b64encode(content.encode("utf-8")).decode(),
+                    "encoding": "base64",
+                },
+                timeout=DEFAULT_TIMEOUT,
+            )
+            self._raise_for_status(blob_resp)
+            tree_items.append(
+                {
+                    "path": path,
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": blob_resp.json()["sha"],
+                }
+            )
+
+        # 3. New tree based on parent's.
+        tree_resp = self.session.post(
+            f"{API_ROOT}/repos/{owner}/{repo}/git/trees",
+            json={"base_tree": base_tree, "tree": tree_items},
+            timeout=DEFAULT_TIMEOUT,
+        )
+        self._raise_for_status(tree_resp)
+
+        # 4. Commit.
+        commit_resp = self.session.post(
+            f"{API_ROOT}/repos/{owner}/{repo}/git/commits",
+            json={
+                "message": message,
+                "tree": tree_resp.json()["sha"],
+                "parents": [parent_sha],
+            },
+            timeout=DEFAULT_TIMEOUT,
+        )
+        self._raise_for_status(commit_resp)
+        new_sha = commit_resp.json()["sha"]
+
+        # 5. Advance the branch ref (force, since this overwrites our reset point).
+        self.create_or_update_ref(owner, repo, branch, new_sha, force=True)
+        return new_sha
+
+    def list_open_prs_for_head(
+        self, owner: str, repo: str, head_branch: str
+    ) -> list[dict[str, Any]]:
+        """List open PRs whose head is ``head_branch`` in this same repo."""
+        return self._get(
+            f"/repos/{owner}/{repo}/pulls",
+            params={"state": "open", "head": f"{owner}:{head_branch}"},
+        ).json()
+
+    def close_pr(self, owner: str, repo: str, number: int) -> dict[str, Any]:
+        """Close a PR (does not delete the branch)."""
+        if not self.authenticated:
+            raise GitHubError("Closing a PR requires a token with repo write access.")
+        resp = self.session.patch(
+            f"{API_ROOT}/repos/{owner}/{repo}/pulls/{number}",
+            json={"state": "closed"},
+            timeout=DEFAULT_TIMEOUT,
+        )
+        self._raise_for_status(resp)
+        return resp.json()
+
+    def open_pr(
+        self,
+        owner: str,
+        repo: str,
+        title: str,
+        head: str,
+        base: str,
+        body: str,
+        draft: bool = False,
+    ) -> dict[str, Any]:
+        """Open a PR. ``head`` and ``base`` are branch names in this same repo."""
+        if not self.authenticated:
+            raise GitHubError("Opening a PR requires a token with repo write access.")
+        resp = self.session.post(
+            f"{API_ROOT}/repos/{owner}/{repo}/pulls",
+            json={
+                "title": title,
+                "head": head,
+                "base": base,
+                "body": body,
+                "draft": draft,
+            },
+            timeout=DEFAULT_TIMEOUT,
+        )
+        self._raise_for_status(resp)
+        return resp.json()
+
+    def dispatch_workflow(
+        self, owner: str, repo: str, workflow_file: str, ref: str
+    ) -> None:
+        """
+        Trigger a workflow's ``workflow_dispatch`` event on a branch.
+
+        ``workflow_file`` is the basename in ``.github/workflows/``
+        (e.g. ``"health-check.yml"``). The workflow must declare
+        ``on: workflow_dispatch`` for this to work — 204 No Content on success.
+        """
+        if not self.authenticated:
+            raise GitHubError(
+                "Dispatching a workflow requires a token with actions write."
+            )
+        resp = self.session.post(
+            f"{API_ROOT}/repos/{owner}/{repo}/actions/workflows/"
+            f"{workflow_file}/dispatches",
+            json={"ref": ref},
+            timeout=DEFAULT_TIMEOUT,
+        )
+        # Successful dispatch returns 204 No Content.
+        self._raise_for_status(resp)
+
+    def list_workflow_runs(
+        self,
+        owner: str,
+        repo: str,
+        workflow_file: str,
+        branch: Optional[str] = None,
+        per_page: int = 10,
+    ) -> list[dict[str, Any]]:
+        """List recent runs for a workflow, optionally filtered by branch."""
+        params: dict[str, Any] = {"per_page": per_page}
+        if branch:
+            params["branch"] = branch
+        resp = self._get(
+            f"/repos/{owner}/{repo}/actions/workflows/{workflow_file}/runs",
+            params=params,
+        )
+        return resp.json().get("workflow_runs", [])
+
+    def get_workflow_run(
+        self, owner: str, repo: str, run_id: int
+    ) -> dict[str, Any]:
+        """Fetch a single run's status / conclusion."""
+        return self._get(f"/repos/{owner}/{repo}/actions/runs/{run_id}").json()
+
 
 def python_files(files: list[PRFile]) -> list[PRFile]:
     """Filter changed files to reviewable Python sources (not deleted)."""

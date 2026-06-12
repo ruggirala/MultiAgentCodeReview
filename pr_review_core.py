@@ -13,7 +13,7 @@ from __future__ import annotations
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from graph.pipeline import run_pipeline
 from integrations.github_pr import (
@@ -24,6 +24,11 @@ from integrations.github_pr import (
 )
 from models.schemas import ReviewState, Severity
 from run_pipeline import build_report
+
+if TYPE_CHECKING:
+    # Imported only for type hints — runtime import is in handle_pr to avoid
+    # the circular dependency (agent_pr_proposer references PRReviewResult).
+    from agent_pr_proposer import AgentProposalOutcome  # noqa: F401
 
 # GitHub rejects comment bodies longer than this.
 GITHUB_COMMENT_LIMIT = 65_536
@@ -52,6 +57,9 @@ class PRReviewResult:
     skipped: list[str] = field(default_factory=list)
     artifacts: dict[str, str] = field(default_factory=dict)
     comment_url: Optional[str] = None
+    # Set by `agent_pr_proposer.propose_agent_fixes` when the post-review
+    # follow-up-PR feature is enabled. None means it didn't run.
+    agent_proposal: Optional["AgentProposalOutcome"] = None
 
     @property
     def total_findings(self) -> int:
@@ -270,6 +278,22 @@ def handle_pr(
 
     if post_comment:
         _maybe_post_comment(client, result, require_confirm)
+
+        # After posting the findings comment, attempt to push the agent's
+        # suggested fixes to a sibling branch and (CI-permitting) open a
+        # follow-up PR. Wrapped defensively — a failure here must NOT prevent
+        # the original review comment from standing.
+        try:
+            from agent_pr_proposer import propose_agent_fixes
+
+            result.agent_proposal = propose_agent_fixes(client, result)
+            print(
+                f"[pr] agent proposal: status={result.agent_proposal.status} "
+                f"branch={result.agent_proposal.agent_branch} "
+                f"pr={result.agent_proposal.proposed_pr_url}"
+            )
+        except Exception as exc:  # noqa: BLE001 - never crash the watcher
+            print(f"[pr] agent-proposal step failed: {exc}")
 
     return result
 
