@@ -89,6 +89,28 @@ def propose_agent_fixes(
             detail="GitHubPRClient is not authenticated — cannot push fixes",
         )
 
+    # --- DEMO HOOK: force a CI failure on the agent branch -----------------
+    # When `AGENT_FIX_INJECT_BAD=1` is set in the environment, replace the
+    # agent's `app.py` fix with a known-broken version (bad import) so the
+    # demo app fails to boot in CI. Used to demonstrate that the CI gate
+    # below correctly REFUSES to open a follow-up PR when the agent's
+    # suggestions break the app.
+    #
+    # Off by default. Never set this in production / normal demos.
+    import os as _os
+    if _os.environ.get("AGENT_FIX_INJECT_BAD") == "1":
+        for path in list(proposed_files):
+            if path.endswith("app.py"):
+                proposed_files[path] = (
+                    '"""DEMO: deliberately broken agent fix to exercise the CI gate."""\n'
+                    "from flask import Flask, _this_does_not_exist  # boot will fail\n\n"
+                    "app = Flask(__name__)\n"
+                )
+                print(
+                    f"[propose] AGENT_FIX_INJECT_BAD=1 — replaced {path} with a "
+                    "known-broken version to exercise the CI-fails path."
+                )
+
     owner, repo, number = result.owner, result.repo, result.number
 
     # --- 2. resolve user PR head ref + sha ---------------------------------
