@@ -235,6 +235,35 @@ PR #3 on the demo repo (deliberately broken fix injected via `AGENT_FIX_INJECT_B
 
 ---
 
+## 11.5 Observability
+
+Every PR review emits structured telemetry to `runs/events.jsonl` (append-only,
+line-delimited JSON; one event per line; gitignored). Four event types share a
+`type` discriminator:
+
+- **`pr_review`** — one per PR reviewed: counts, severities, duration, run_id.
+- **`agent`** — one per LangGraph node: agent name, duration, findings added,
+  errors. Lets us reconstruct the *agent interaction* path for each file.
+- **`llm_call`** — one per `call_llm()` attempt: backend, model, tokens, retry,
+  errors. Attribution to the calling agent is via a `contextvars.ContextVar`
+  set by the pipeline node wrapper.
+- **`poll_cycle`** — one per `watch_prs.py` poll iteration: open/new/reviewed
+  counts, error count, current backoff.
+
+A Streamlit dashboard (`dashboard/app.py`) tails this file and visualizes:
+- Overview KPIs (PRs reviewed, findings, throughput, error rate)
+- Per-PR table with daily throughput
+- Agent-interaction Sankey, per-agent duration box plot, findings-contribution bar
+- LLM telemetry (calls per backend/model, token totals, retries, p95 latency)
+- Watcher poll cadence
+
+Launch:
+```bash
+streamlit run dashboard/app.py
+```
+
+Set `METRICS_DISABLED=1` to disable emission entirely (e.g. in tests).
+
 ## 12. Repository links
 
 - **Reviewer (this project):** https://github.com/rahulilla/MultiAgentCodeReview

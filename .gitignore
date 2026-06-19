@@ -13,6 +13,12 @@ test_sample_bad_code.py
 # Watcher state
 .pr_watch_state.json
 
+# Telemetry / dashboard data
+runs/
+
+# Load-test run artifacts
+load_test/status.json
+
 # Python
 __pycache__/
 *.py[cod]

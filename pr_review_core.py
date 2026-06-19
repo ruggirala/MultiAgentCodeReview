@@ -10,7 +10,11 @@ pipeline over each.
 
 from __future__ import annotations
 
+import os
+import time
+import uuid
 import zipfile
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -22,7 +26,8 @@ from integrations.github_pr import (
     PRFile,
     python_files,
 )
-from models.schemas import ReviewState, Severity
+from metrics import PRReviewEvent, record
+from models.schemas import Category, ReviewState, Severity
 from run_pipeline import build_report
 
 if TYPE_CHECKING:
@@ -229,6 +234,9 @@ def handle_pr(
     `require_confirm=True` prompts before posting (manual CLI); the watcher passes
     False to post non-interactively.
     """
+    run_id = uuid.uuid4().hex
+    started = time.perf_counter()
+
     pr = client.get_pr(owner, repo, number)
     head_sha = pr["head"]["sha"]
     result = PRReviewResult(
@@ -271,7 +279,7 @@ def handle_pr(
             continue
 
         print(f"[pr] reviewing {f.filename}…")
-        state = run_pipeline(f.filename, source)
+        state = run_pipeline(f.filename, source, run_id=run_id)
         result.reviews.append(FileReview(filename=f.filename, state=state))
 
     result.artifacts = _write_artifacts(result)
@@ -283,19 +291,61 @@ def handle_pr(
         # suggested fixes to a sibling branch and (CI-permitting) open a
         # follow-up PR. Wrapped defensively — a failure here must NOT prevent
         # the original review comment from standing.
-        try:
-            from agent_pr_proposer import propose_agent_fixes
+        # Skipped under SKIP_AGENT_PROPOSAL=1 (used by the load test, since the
+        # airflow fork has no Actions workflows for the proposer to gate on).
+        if os.environ.get("SKIP_AGENT_PROPOSAL") == "1":
+            print("[pr] SKIP_AGENT_PROPOSAL=1 — skipping follow-up-PR step.")
+        else:
+            try:
+                from agent_pr_proposer import propose_agent_fixes
 
-            result.agent_proposal = propose_agent_fixes(client, result)
-            print(
-                f"[pr] agent proposal: status={result.agent_proposal.status} "
-                f"branch={result.agent_proposal.agent_branch} "
-                f"pr={result.agent_proposal.proposed_pr_url}"
-            )
-        except Exception as exc:  # noqa: BLE001 - never crash the watcher
-            print(f"[pr] agent-proposal step failed: {exc}")
+                result.agent_proposal = propose_agent_fixes(client, result)
+                print(
+                    f"[pr] agent proposal: status={result.agent_proposal.status} "
+                    f"branch={result.agent_proposal.agent_branch} "
+                    f"pr={result.agent_proposal.proposed_pr_url}"
+                )
+            except Exception as exc:  # noqa: BLE001 - never crash the watcher
+                print(f"[pr] agent-proposal step failed: {exc}")
 
+    _emit_pr_review_event(run_id, result, time.perf_counter() - started)
     return result
+
+
+def _emit_pr_review_event(
+    run_id: str, result: PRReviewResult, duration_sec: float
+) -> None:
+    """Aggregate findings across files and write one PRReviewEvent."""
+    sev_counts: Counter[str] = Counter()
+    cat_counts: Counter[str] = Counter()
+    for review in result.reviews:
+        for finding in review.state.findings:
+            sev_counts[finding.severity.value] += 1
+            cat_counts[finding.category.value] += 1
+
+    proposal_status: Optional[str] = None
+    if result.agent_proposal is not None:
+        proposal_status = result.agent_proposal.status
+
+    record(
+        PRReviewEvent(
+            run_id=run_id,
+            owner=result.owner,
+            repo=result.repo,
+            pr_number=result.number,
+            head_sha=result.head_sha,
+            title=result.title,
+            author=result.author,
+            files_reviewed=len(result.reviews),
+            files_skipped=len(result.skipped),
+            total_findings=result.total_findings,
+            findings_by_severity={s.value: sev_counts.get(s.value, 0) for s in Severity},
+            findings_by_category={c.value: cat_counts.get(c.value, 0) for c in Category},
+            needs_human_review=any(r.state.needs_human_review for r in result.reviews),
+            duration_sec=duration_sec,
+            agent_proposal_status=proposal_status,
+        )
+    )
 
 
 def _maybe_post_comment(

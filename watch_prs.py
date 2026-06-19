@@ -37,6 +37,7 @@ from pathlib import Path
 import requests
 
 from integrations.github_pr import GitHubError, GitHubPRClient
+from metrics import PollCycleEvent, record
 from pr_review_core import handle_pr
 
 # Transient errors we recover from in the poll loop instead of crashing.
@@ -149,6 +150,10 @@ def main() -> None:
     try:
         while True:
             poll += 1
+            errors = 0
+            reviewed = 0
+            open_count = 0
+            new_count = 0
             try:
                 open_prs = client.list_open_prs(owner, repo)
                 backoff = _ERROR_BACKOFF_START  # reset after a good cycle
@@ -157,9 +162,11 @@ def main() -> None:
                     for pr in open_prs
                     if _pr_key(pr["number"], pr["head"]["sha"]) not in seen
                 ]
+                open_count = len(open_prs)
+                new_count = len(new_prs)
                 print(
-                    f"[watch] poll #{poll}: {len(open_prs)} open, "
-                    f"{len(new_prs)} new."
+                    f"[watch] poll #{poll}: {open_count} open, "
+                    f"{new_count} new."
                 )
 
                 for pr in new_prs:
@@ -176,16 +183,39 @@ def main() -> None:
                             require_confirm=False,  # watcher is non-interactive
                             max_files=args.max_files,
                         )
+                        reviewed += 1
                     except Exception as exc:  # noqa: BLE001
+                        errors += 1
                         print(f"[watch] review of #{number} failed: {exc}")
                     # Mark seen regardless, so a persistently-failing PR doesn't
                     # loop forever; a new commit (new SHA) will retry.
                     seen.add(key)
                     _save_state(state_path, seen)
 
+                record(
+                    PollCycleEvent(
+                        poll_number=poll,
+                        open_pr_count=open_count,
+                        new_pr_count=new_count,
+                        reviewed_count=reviewed,
+                        error_count=errors,
+                        backoff_sec=0.0,
+                    )
+                )
                 time.sleep(args.interval)
 
             except _TRANSIENT_ERRORS as exc:
+                errors += 1
+                record(
+                    PollCycleEvent(
+                        poll_number=poll,
+                        open_pr_count=open_count,
+                        new_pr_count=new_count,
+                        reviewed_count=reviewed,
+                        error_count=errors,
+                        backoff_sec=float(backoff),
+                    )
+                )
                 print(f"[watch] poll error: {exc}; backing off {backoff}s.")
                 time.sleep(backoff)
                 backoff = min(backoff * 2, _ERROR_BACKOFF_MAX)

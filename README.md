@@ -72,11 +72,11 @@ pipeline and posts the analysis as a PR comment — no manual step.
 #### Step 1 — be in the project directory
 
 The watcher resolves its modules and `.env` relative to the project root, so run
-it from there (running it from `scripts/` or elsewhere causes
+it from the repo root (running it from a subdirectory causes
 `ModuleNotFoundError: No module named 'integrations'`):
 
 ```bash
-cd /Users/rilla/AI_Training
+cd path/to/MultiAgentCodeReview
 ```
 
 #### Step 2 — make sure `.env` has both keys
@@ -141,6 +141,64 @@ isn't picked up from `.env`, you can force it inline:
 GITHUB_TOKEN=ghp_xxx python3 watch_prs.py rahulilla/airflow
 ```
 
+## Telemetry & dashboard
+
+Every PR review emits structured events to `runs/events.jsonl` (line-delimited
+JSON, append-only, gitignored). Four event types share a `type` discriminator:
+
+- `pr_review` — one per PR reviewed (counts, severities, duration)
+- `agent` — one per LangGraph node (per-agent timing, findings added, errors)
+- `llm_call` — one per `call_llm()` attempt (backend, model, tokens, retries)
+- `poll_cycle` — one per watcher poll iteration
+
+A Streamlit dashboard tails this file and renders KPIs, a Sankey of agent flow,
+per-agent duration distributions, LLM telemetry, and the watcher's poll history.
+
+### Run the dashboard
+
+From the repo root, with the venv active (or via its `streamlit` binary):
+
+```bash
+streamlit run dashboard/app.py
+# → opens http://localhost:8501 — auto-refreshes every 10s
+```
+
+If `streamlit` isn't on your PATH, run it via the venv directly:
+
+```bash
+.venv/bin/streamlit run dashboard/app.py
+```
+
+The dashboard is read-only and reads `runs/events.jsonl` directly, so you can
+run it alongside an active watcher (in another terminal) and see PRs land live.
+Set `METRICS_DISABLED=1` to suppress emission entirely (e.g. in tests).
+
+## Load testing
+
+`load_test/` exercises the full pipeline by opening 30 deliberately-bad PRs
+against a target repo (your fork — never a public repo you don't own) and
+verifying each gets reviewed end-to-end:
+
+```bash
+# Terminal A — start the watcher with the agent-proposer step disabled
+# (the proposer polls CI for 5min; load-test fork need not have Actions)
+SKIP_AGENT_PROPOSAL=1 python watch_prs.py <owner>/<repo>
+
+# Terminal B — drive 30 buggy PRs sequentially
+python -m load_test.orchestrator --dry-run     # plan only, no GitHub calls
+python -m load_test.orchestrator --count 1     # single-PR pre-flight
+python -m load_test.orchestrator               # full 30 (~40 min)
+
+# Terminal C — watch the dashboard fill in real time
+streamlit run dashboard/app.py
+```
+
+The target owner/repo is set as a constant at the top of
+`load_test/orchestrator.py` (and there's a hard guard refusing to run against
+known public repos). Per-PR results land in `load_test/status.json`. See
+`load_test/README.md` for template details and a one-liner to close the
+resulting PRs afterward.
+
 ## Project layout
 
 | Path | Purpose |
@@ -154,6 +212,9 @@ GITHUB_TOKEN=ghp_xxx python3 watch_prs.py rahulilla/airflow
 | `pr_review_core.py` | Shared "review one PR" logic |
 | `review_pr.py` | PR review CLI |
 | `watch_prs.py` | Polling watcher (auto-trigger) |
+| `metrics/recorder.py` | Pydantic event schemas + JSONL emitter |
+| `dashboard/app.py` | Streamlit dashboard over `runs/events.jsonl` |
+| `load_test/` | 30-PR load-test driver + buggy-code templates |
 | `build_notebook.py` | Generates the Colab notebook |
 
 ## Status

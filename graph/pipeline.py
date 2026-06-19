@@ -25,6 +25,9 @@ State is the Pydantic `ReviewState`; each node returns the mutated state.
 
 from __future__ import annotations
 
+import time
+from typing import Callable
+
 from agents import (
     bug_agent,
     orchestrator,
@@ -33,6 +36,7 @@ from agents import (
     style_agent,
     test_agent,
 )
+from metrics import AgentEvent, record, reset_current_agent, set_current_agent
 from models.schemas import ReviewState
 
 # Routing threshold lives in one place.
@@ -40,27 +44,65 @@ HUMAN_REVIEW_BRANCH = "human_review"
 CONTINUE_BRANCH = "patch"
 
 
+def _instrumented(
+    name: str, fn: Callable[[ReviewState], ReviewState]
+) -> Callable[[ReviewState], ReviewState]:
+    """Wrap an agent function to time it, count findings added, and emit an AgentEvent.
+
+    Also sets a contextvar so any LLM calls made inside `fn` are attributed to
+    this agent in the LLM telemetry.
+    """
+
+    def wrapper(state: ReviewState) -> ReviewState:
+        before = len(state.findings)
+        start = time.perf_counter()
+        token = set_current_agent(name, state.run_id)
+        err: str | None = None
+        try:
+            result = fn(state)
+            return result
+        except Exception as exc:  # noqa: BLE001 - re-raised after recording
+            err = f"{type(exc).__name__}: {exc}"
+            raise
+        finally:
+            reset_current_agent(token)
+            duration = time.perf_counter() - start
+            added = max(0, len(state.findings) - before)
+            record(
+                AgentEvent(
+                    run_id=state.run_id or "unknown",
+                    file_name=state.file_name,
+                    agent_name=name,
+                    duration_sec=duration,
+                    findings_added=added,
+                    error=err,
+                )
+            )
+
+    return wrapper
+
+
 # --- node wrappers -------------------------------------------------------
 # Each agent already takes/returns ReviewState, so nodes are thin.
 
 
-def _node_orchestrate(state: ReviewState) -> ReviewState:
+def _orchestrate(state: ReviewState) -> ReviewState:
     return orchestrator.orchestrate(state)
 
 
-def _node_security(state: ReviewState) -> ReviewState:
+def _security(state: ReviewState) -> ReviewState:
     return security_agent.analyze(state)
 
 
-def _node_bug(state: ReviewState) -> ReviewState:
+def _bug(state: ReviewState) -> ReviewState:
     return bug_agent.analyze(state)
 
 
-def _node_style(state: ReviewState) -> ReviewState:
+def _style(state: ReviewState) -> ReviewState:
     return style_agent.analyze(state)
 
 
-def _node_triage(state: ReviewState) -> ReviewState:
+def _triage(state: ReviewState) -> ReviewState:
     """Decide whether the findings warrant a human-in-the-loop pause."""
     critical = state.critical_security_findings()
     state.needs_human_review = bool(critical)
@@ -72,7 +114,7 @@ def _node_triage(state: ReviewState) -> ReviewState:
     return state
 
 
-def _node_human_review(state: ReviewState) -> ReviewState:
+def _human_review(state: ReviewState) -> ReviewState:
     """
     Human-in-the-loop checkpoint.
 
@@ -90,12 +132,23 @@ def _node_human_review(state: ReviewState) -> ReviewState:
     return state
 
 
-def _node_patch(state: ReviewState) -> ReviewState:
+def _patch(state: ReviewState) -> ReviewState:
     return patch_agent.generate(state)
 
 
-def _node_tests(state: ReviewState) -> ReviewState:
+def _tests(state: ReviewState) -> ReviewState:
     return test_agent.generate(state)
+
+
+# Wrapped versions used as graph nodes — these are what emit AgentEvents.
+_node_orchestrate = _instrumented("orchestrate", _orchestrate)
+_node_security = _instrumented("security", _security)
+_node_bug = _instrumented("bug", _bug)
+_node_style = _instrumented("style", _style)
+_node_triage = _instrumented("triage", _triage)
+_node_human_review = _instrumented("human_review", _human_review)
+_node_patch = _instrumented("patch", _patch)
+_node_tests = _instrumented("tests", _tests)
 
 
 def _route_after_triage(state: ReviewState) -> str:
@@ -138,15 +191,27 @@ def build_graph():
     return graph.compile()
 
 
-def run_pipeline(file_name: str, source_code: str) -> ReviewState:
+def run_pipeline(
+    file_name: str,
+    source_code: str,
+    *,
+    run_id: str | None = None,
+) -> ReviewState:
     """
     Convenience entrypoint: build the graph, run it, and return final state.
 
     LangGraph returns the state as a dict-like; we re-validate it back into a
     `ReviewState` so callers always get a typed object.
+
+    `run_id` is stamped onto the state so AgentEvent/LLMCallEvent emissions
+    from this run are linkable back to the PR review that started them.
     """
     app = build_graph()
-    initial = ReviewState(file_name=file_name, source_code=source_code)
+    initial = ReviewState(
+        file_name=file_name,
+        source_code=source_code,
+        run_id=run_id,
+    )
     result = app.invoke(initial)
     if isinstance(result, ReviewState):
         return result

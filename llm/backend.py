@@ -142,7 +142,17 @@ def _load_codellama():
     return _hf_model, _hf_tokenizer
 
 
-def _call_openai(prompt: str, system: str, temperature: float) -> str:
+@dataclass
+class _LLMResult:
+    """Internal carrier for one LLM call's text + token usage."""
+
+    text: str
+    prompt_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+
+
+def _call_openai(prompt: str, system: str, temperature: float) -> _LLMResult:
     client = _get_openai_client()
     backend = get_backend()
     resp = client.chat.completions.create(
@@ -153,10 +163,17 @@ def _call_openai(prompt: str, system: str, temperature: float) -> str:
         ],
         temperature=temperature,
     )
-    return resp.choices[0].message.content or ""
+    text = resp.choices[0].message.content or ""
+    usage = getattr(resp, "usage", None)
+    return _LLMResult(
+        text=text,
+        prompt_tokens=getattr(usage, "prompt_tokens", None) if usage else None,
+        completion_tokens=getattr(usage, "completion_tokens", None) if usage else None,
+        total_tokens=getattr(usage, "total_tokens", None) if usage else None,
+    )
 
 
-def _call_codellama(prompt: str, system: str, temperature: float) -> str:
+def _call_codellama(prompt: str, system: str, temperature: float) -> _LLMResult:
     model, tokenizer = _load_codellama()
     # CodeLlama-Instruct chat format.
     full = f"<s>[INST] <<SYS>>\n{system}\n<</SYS>>\n\n{prompt} [/INST]"
@@ -169,8 +186,16 @@ def _call_codellama(prompt: str, system: str, temperature: float) -> str:
         pad_token_id=tokenizer.eos_token_id,
     )
     # Decode only the newly generated tokens (strip the prompt echo).
-    generated = output[0][inputs["input_ids"].shape[1]:]
-    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+    prompt_tok = int(inputs["input_ids"].shape[1])
+    completion_tok = int(output[0].shape[0]) - prompt_tok
+    generated = output[0][prompt_tok:]
+    text = tokenizer.decode(generated, skip_special_tokens=True).strip()
+    return _LLMResult(
+        text=text,
+        prompt_tokens=prompt_tok,
+        completion_tokens=completion_tok,
+        total_tokens=prompt_tok + completion_tok,
+    )
 
 
 def call_llm(
@@ -183,17 +208,49 @@ def call_llm(
 
     Retries with exponential backoff on transient failures (network, rate
     limits). Raises the last exception if all retries are exhausted.
+
+    Emits one LLMCallEvent per attempt (success or failure) for the dashboard.
     """
+    from metrics import LLMCallEvent, current_agent, record
+
     backend = get_backend()
     last_exc: Optional[Exception] = None
 
     for attempt in range(MAX_RETRIES):
+        agent_name, run_id = current_agent()
+        start = time.perf_counter()
         try:
             if backend.kind == "openai":
-                return _call_openai(prompt, system, temperature)
-            return _call_codellama(prompt, system, temperature)
+                result = _call_openai(prompt, system, temperature)
+            else:
+                result = _call_codellama(prompt, system, temperature)
+            record(
+                LLMCallEvent(
+                    run_id=run_id,
+                    agent_name=agent_name,
+                    backend=backend.kind,
+                    model=backend.model,
+                    prompt_tokens=result.prompt_tokens,
+                    completion_tokens=result.completion_tokens,
+                    total_tokens=result.total_tokens,
+                    duration_sec=time.perf_counter() - start,
+                    attempt=attempt + 1,
+                )
+            )
+            return result.text
         except Exception as exc:  # noqa: BLE001 - we re-raise after retries
             last_exc = exc
+            record(
+                LLMCallEvent(
+                    run_id=run_id,
+                    agent_name=agent_name,
+                    backend=backend.kind,
+                    model=backend.model,
+                    duration_sec=time.perf_counter() - start,
+                    attempt=attempt + 1,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+            )
             wait = 2 ** attempt
             print(
                 f"[llm] call failed (attempt {attempt + 1}/{MAX_RETRIES}): "

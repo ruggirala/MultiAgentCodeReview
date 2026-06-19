@@ -113,6 +113,10 @@ class ReviewState(BaseModel):
     needs_human_review: bool = False
     errors: list[str] = Field(default_factory=list)
 
+    # Telemetry: stamped by handle_pr() so AgentEvents/LLMCallEvents from this
+    # pipeline run can be tied back to the PR review that started them.
+    run_id: Optional[str] = None
+
     def add_findings(self, new: list[Finding]) -> None:
         """Append findings, ignoring Nones from failed parses."""
         self.findings.extend(f for f in new if f is not None)
