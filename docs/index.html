@@ -223,7 +223,7 @@
     </div>
     <div class="problem-card">
       <h3 class="purple">Conditional routing</h3>
-      <p>The triage node sets <code>needs_human_review = True</code> when any <span class="red">Critical/High</span> security finding exists. LangGraph's conditional edge then routes through <code>human_review</code> before patching — a real interrupt point in production.</p>
+      <p>The triage node sets <code>needs_human_review = True</code> when any <span class="red">Critical/High</span> security finding exists. LangGraph routes through a <code>human_review</code> checkpoint node that surfaces the findings — today a logged warning the operator sees in the watcher; a stubbed extension point for a real interrupt.</p>
     </div>
   </div>
 
@@ -339,7 +339,7 @@
   <div class="cols three" style="margin-top: 22px; gap: 16px;">
     <div class="problem-card" style="padding: 16px 18px;">
       <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why LangGraph</h3>
-      <p style="font-size: 0.86rem; line-height: 1.5;">Explicit conditional edges &gt; chained agents. Lets us route Critical/High security findings to a real human-review interrupt, not a hallucinated decision.</p>
+      <p style="font-size: 0.86rem; line-height: 1.5;">Explicit conditional edges &gt; chained agents. Critical/High security findings route through a <code>human_review</code> checkpoint node — wired as a structured extension point rather than a hallucinated decision.</p>
     </div>
     <div class="problem-card" style="padding: 16px 18px;">
       <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why JSONL telemetry</h3>
