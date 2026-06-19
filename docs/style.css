@@ -882,7 +882,117 @@ pre.code .v  { color: var(--accent-2); }
 }
 
 /* ----------------------------------------------------------- *
- *  Goal cards (slide 9)
+ *  Case-study cards (slide 10)
+ * ----------------------------------------------------------- */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 22px;
+}
+.case-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+.case-card:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(167,139,250,0.06), rgba(96,165,250,0.02));
+  border-color: rgba(167,139,250,0.35);
+}
+.case-card[data-color="red"]    { border-left-color: var(--accent-6); }
+.case-card[data-color="amber"]  { border-left-color: var(--accent-5); }
+.case-card[data-color="blue"]   { border-left-color: var(--accent-2); }
+.case-card[data-color="purple"] { border-left-color: var(--accent); }
+.case-card[data-color="green"]  { border-left-color: var(--accent-3); }
+
+.case-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.case-cat {
+  font-size: 0.7rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+.case-cwe {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--accent-2);
+  background: rgba(96,165,250,0.10);
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+.case-sev {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.case-sev.sev-high   { background: rgba(248,113,113,0.18); color: var(--accent-6); }
+.case-sev.sev-medium { background: rgba(251,191,36,0.18); color: var(--accent-5); }
+.case-sev.sev-low    { background: rgba(96,165,250,0.18); color: var(--accent-2); }
+
+.case-title {
+  color: var(--text-2);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.case-snippet {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow: hidden;
+}
+.case-snippet code {
+  background: none;
+  padding: 0;
+  color: #C4B5FD;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.case-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: auto;
+}
+
+.case-card-summary {
+  background: linear-gradient(135deg, rgba(52,211,153,0.06), rgba(167,139,250,0.04));
+  cursor: default;
+}
+.case-card-summary:hover { transform: none; }
+.case-summary-body {
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 1100px) { .case-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px)  { .case-grid { grid-template-columns: 1fr; } }
+
+/* ----------------------------------------------------------- *
+ *  Goal cards (slide 11)
  * ----------------------------------------------------------- */
 .goal-grid {
   display: grid;

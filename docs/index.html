@@ -580,9 +580,96 @@
 </section>
 
 <!-- ============================================================
-     Slide 10 — Goals
+     Slide 10 — Case studies
      ============================================================ -->
 <section class="slide" id="10">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">Case studies</h1>
+  <p class="subtitle">Five concrete bugs the pipeline caught on real PRs to <code>rahulilla/airflow</code> during the load test. Verbatim agent output, full write-ups linked from each card.</p>
+
+  <div class="case-grid">
+    <a class="case-card" data-color="red"
+       href="https://github.com/rahulilla/MultiAgentCodeReview/blob/main/case_studies/01-sql-injection.md"
+       target="_blank" rel="noreferrer">
+      <div class="case-head">
+        <span class="case-cat">Security</span>
+        <span class="case-cwe">CWE-89</span>
+        <span class="case-sev sev-high">High</span>
+      </div>
+      <div class="case-title">SQL injection via string concatenation</div>
+      <div class="case-snippet"><code>"SELECT * FROM users WHERE username = '" + username + "'"</code></div>
+      <div class="case-meta">PR #5 · 22 findings · 64.5s · flagged for human review</div>
+    </a>
+
+    <a class="case-card" data-color="red"
+       href="https://github.com/rahulilla/MultiAgentCodeReview/blob/main/case_studies/02-hardcoded-api-key.md"
+       target="_blank" rel="noreferrer">
+      <div class="case-head">
+        <span class="case-cat">Security</span>
+        <span class="case-cwe">CWE-798</span>
+        <span class="case-sev sev-high">High</span>
+      </div>
+      <div class="case-title">Hardcoded production API key</div>
+      <div class="case-snippet"><code>api_key = "sk_live_4EC9aV3LzTpmf_…"</code></div>
+      <div class="case-meta">PR #9 · 25 findings · 63.2s · flagged for human review</div>
+    </a>
+
+    <a class="case-card" data-color="amber"
+       href="https://github.com/rahulilla/MultiAgentCodeReview/blob/main/case_studies/03-mutable-default-arg.md"
+       target="_blank" rel="noreferrer">
+      <div class="case-head">
+        <span class="case-cat">Bug</span>
+        <span class="case-cwe">CWE-582</span>
+        <span class="case-sev sev-medium">Medium</span>
+      </div>
+      <div class="case-title">Mutable default argument</div>
+      <div class="case-snippet"><code>def append_log_entry(msg, log: list = []):</code></div>
+      <div class="case-meta">PR #15 · 22 findings · 84.6s</div>
+    </a>
+
+    <a class="case-card" data-color="blue"
+       href="https://github.com/rahulilla/MultiAgentCodeReview/blob/main/case_studies/04-string-concat-loop.md"
+       target="_blank" rel="noreferrer">
+      <div class="case-head">
+        <span class="case-cat">Performance</span>
+        <span class="case-cwe">O(n²)</span>
+        <span class="case-sev sev-low">Low</span>
+      </div>
+      <div class="case-title">Quadratic string concatenation in a loop</div>
+      <div class="case-snippet"><code>result = result + line + "\n"</code></div>
+      <div class="case-meta">PR #27 · 5 findings · 22.7s · fastest review of the run</div>
+    </a>
+
+    <a class="case-card" data-color="purple"
+       href="https://github.com/rahulilla/MultiAgentCodeReview/blob/main/case_studies/05-cyclomatic-complexity.md"
+       target="_blank" rel="noreferrer">
+      <div class="case-head">
+        <span class="case-cat">Style</span>
+        <span class="case-cwe">radon CC=14</span>
+        <span class="case-sev sev-medium">Medium</span>
+      </div>
+      <div class="case-title">Pathological cyclomatic complexity</div>
+      <div class="case-snippet"><code>classify_priority(score, urgent, paid, region, tier)</code></div>
+      <div class="case-meta">PR #30 · 32 findings · 62.9s · most findings of any PR</div>
+    </a>
+
+    <div class="case-card case-card-summary" data-color="green">
+      <div class="case-head">
+        <span class="case-cat green">Why these matter</span>
+      </div>
+      <div class="case-summary-body">
+        Two cases triggered the <code>human_review</code> checkpoint.<br>
+        One demonstrates <span class="purple">two agents triangulating</span> on the same function (radon + GPT-4o).<br>
+        All five are drawn from real load-test telemetry, not hand-crafted demos.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Slide 11 — Goals
+     ============================================================ -->
+<section class="slide" id="11">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What success looks like</h1>
   <p class="subtitle">Specific, measurable goals — not just "more features." Today's numbers in <span class="purple">purple</span>; targets we're chasing in <span class="green">green</span>.</p>
@@ -657,9 +744,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 11 — Q&A / Links
+     Slide 12 — Q&A / Links
      ============================================================ -->
-<section class="slide" id="11">
+<section class="slide" id="12">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
 
   <h1 class="title-hero" style="font-size: 4.5rem; margin-bottom: 8px;">Thank you.</h1>
@@ -668,7 +755,7 @@
 </section>
 
 <!-- Bottom-fixed nav and counter -->
-<div class="deck-counter"><b id="counter-current">1</b> / 11 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
+<div class="deck-counter"><b id="counter-current">1</b> / 12 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
 <div class="deck-nav">
   <button id="prev-btn">← Prev</button>
   <button id="next-btn">Next →</button>
