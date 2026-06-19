@@ -201,6 +201,21 @@ known public repos). Per-PR results land in `load_test/status.json`. See
 `load_test/README.md` for template details and a one-liner to close the
 resulting PRs afterward.
 
+## Case studies
+
+Five concrete bugs the pipeline caught on real PRs to `rahulilla/airflow`
+during the load test, with the agent's verbatim output and suggested fix:
+
+| # | Category | CWE / metric | Live PR |
+|---|---|---|---|
+| [SQL injection via string concatenation](case_studies/01-sql-injection.md) | Security | CWE-89 | [#5](https://github.com/rahulilla/airflow/pull/5) |
+| [Hardcoded production API key](case_studies/02-hardcoded-api-key.md) | Security | CWE-798 | [#9](https://github.com/rahulilla/airflow/pull/9) |
+| [Mutable default argument](case_studies/03-mutable-default-arg.md) | Bug | CWE-582 | [#15](https://github.com/rahulilla/airflow/pull/15) |
+| [Quadratic string concatenation](case_studies/04-string-concat-loop.md) | Performance | — | [#27](https://github.com/rahulilla/airflow/pull/27) |
+| [Pathological cyclomatic complexity](case_studies/05-cyclomatic-complexity.md) | Style | radon CC=14 | [#30](https://github.com/rahulilla/airflow/pull/30) |
+
+See [`case_studies/README.md`](case_studies/README.md) for the index.
+
 ## Project layout
 
 | Path | Purpose |
