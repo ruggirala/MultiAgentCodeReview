@@ -401,38 +401,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 7 — Telemetry + dashboard
+     Slide 7 — What the agent posts
      ============================================================ -->
 <section class="slide" id="7">
-  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
-  <h1 class="section-title">Telemetry &amp; dashboard</h1>
-  <p class="subtitle">Every run emits structured events — a Streamlit app tails them in real time.</p>
-
-  <figure class="dashboard-shot">
-    <img src="assets/dashboard.png" alt="Multi-Agent Code Review dashboard — Overview tab" loading="lazy">
-    <figcaption>
-      <span class="cap-pip"></span>
-      Live Streamlit dashboard — Overview tab. KPI cards with sparklines, recent-activity table linking back to each PR. Auto-refreshes every 10s.
-    </figcaption>
-  </figure>
-
-  <div class="event-strip">
-    <div class="ev-pill"><b class="purple">pr_review</b><span>one per PR · counts, severities, duration</span></div>
-    <div class="ev-pill"><b class="purple">agent</b><span>one per LangGraph node · timing, errors</span></div>
-    <div class="ev-pill"><b class="purple">llm_call</b><span>one per call_llm() · backend, tokens, retries</span></div>
-    <div class="ev-pill"><b class="purple">poll_cycle</b><span>one per watcher poll · throughput, errors</span></div>
-  </div>
-
-  <p class="muted" style="margin-top: 14px; font-size: 0.88rem;">
-    Append-only JSONL in <code>runs/events.jsonl</code>. No DB, crash-safe, trivially tailable. A
-    <code>contextvars.ContextVar</code> attributes every LLM call back to the agent that made it.
-  </p>
-</section>
-
-<!-- ============================================================
-     Slide 8 — What the agent posts
-     ============================================================ -->
-<section class="slide" id="8">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What the agent posts</h1>
   <p class="subtitle">Every PR gets a structured review comment with a per-file severity table, every finding spelled out with location + CWE + suggested fix.</p>
@@ -494,6 +465,35 @@
 
   <p class="muted" style="margin-top: 14px; font-size: 0.85rem; text-align: center;">
     Real comment generated in 71.6s · 1,306 tokens · agent-suggested-fix branch opened automatically
+  </p>
+</section>
+
+<!-- ============================================================
+     Slide 8 — Telemetry + dashboard
+     ============================================================ -->
+<section class="slide" id="8">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">Telemetry &amp; dashboard</h1>
+  <p class="subtitle">Every run emits structured events — a Streamlit app tails them in real time.</p>
+
+  <figure class="dashboard-shot">
+    <img src="assets/dashboard.png" alt="Multi-Agent Code Review dashboard — Overview tab" loading="lazy">
+    <figcaption>
+      <span class="cap-pip"></span>
+      Live Streamlit dashboard — Overview tab. KPI cards with sparklines, recent-activity table linking back to each PR. Auto-refreshes every 10s.
+    </figcaption>
+  </figure>
+
+  <div class="event-strip">
+    <div class="ev-pill"><b class="purple">pr_review</b><span>one per PR · counts, severities, duration</span></div>
+    <div class="ev-pill"><b class="purple">agent</b><span>one per LangGraph node · timing, errors</span></div>
+    <div class="ev-pill"><b class="purple">llm_call</b><span>one per call_llm() · backend, tokens, retries</span></div>
+    <div class="ev-pill"><b class="purple">poll_cycle</b><span>one per watcher poll · throughput, errors</span></div>
+  </div>
+
+  <p class="muted" style="margin-top: 14px; font-size: 0.88rem;">
+    Append-only JSONL in <code>runs/events.jsonl</code>. No DB, crash-safe, trivially tailable. A
+    <code>contextvars.ContextVar</code> attributes every LLM call back to the agent that made it.
   </p>
 </section>
 
