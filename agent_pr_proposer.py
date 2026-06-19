@@ -23,8 +23,10 @@ the watcher.
 from __future__ import annotations
 
 import os
+import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from integrations.github_pr import GitHubError, GitHubPRClient
@@ -68,6 +70,7 @@ def propose_agent_fixes(
         return AgentProposalOutcome(status="no_changes", detail="no reviews ran")
 
     proposed_files: dict[str, str] = {}
+    test_files_added: list[str] = []  # for the commit message + PR body
     for review in result.reviews:
         patch = review.state.patch
         if not patch or not patch.fixed_code:
@@ -77,6 +80,20 @@ def propose_agent_fixes(
         if patch.fixed_code.strip() == review.state.source_code.strip():
             continue
         proposed_files[review.filename] = patch.fixed_code
+
+        # Also commit the agent-generated pytest suite for this file, if any.
+        # Rewrites the boilerplate `from solution import ...` to the dotted
+        # path derived from the file's location so the test is a real import,
+        # not a placeholder.
+        tests = review.state.tests
+        if tests and tests.test_code:
+            stem = Path(review.filename).stem
+            test_path = f"tests/agent_generated/test_{stem}.py"
+            test_body = _rewrite_test_imports(
+                tests.test_code, target_file=review.filename
+            )
+            proposed_files[test_path] = test_body
+            test_files_added.append(test_path)
 
     if not proposed_files:
         return AgentProposalOutcome(
@@ -141,12 +158,18 @@ def propose_agent_fixes(
     # --- 4. reset the agent branch to the user's head sha -----------------
     client.create_or_update_ref(owner, repo, agent_branch, user_head_sha, force=True)
 
-    # --- 5. commit the fixes ----------------------------------------------
+    # --- 5. commit the fixes (and the agent-generated test suites) -------
+    fix_count = len(proposed_files) - len(test_files_added)
+    test_blurb = (
+        f"\n\nAlso commits {len(test_files_added)} agent-generated pytest "
+        f"suite(s) under `tests/agent_generated/` to validate the fixes."
+        if test_files_added else ""
+    )
     commit_message = (
         f"agent: suggested fixes for #{number}\n\n"
         f"Auto-generated patch from the multi-agent code review pipeline.\n"
         f"Addresses {sum(len(r.state.findings) for r in result.reviews)} "
-        f"finding(s) across {len(proposed_files)} file(s)."
+        f"finding(s) across {fix_count} file(s).{test_blurb}"
     )
     new_sha = client.commit_files(
         owner, repo, agent_branch, proposed_files, commit_message, user_head_sha
@@ -161,6 +184,10 @@ def propose_agent_fixes(
     if os.environ.get("SKIP_CI_GATE") == "1":
         print("[propose] SKIP_CI_GATE=1 — skipping CI dispatch/poll, opening "
               "follow-up PR directly.")
+        # Stamp the outcome before building the PR body so the body's CI block
+        # correctly renders the "skipped" state instead of falling through to
+        # the "✅ green" branch with None links.
+        outcome.workflow_conclusion = "skipped"
         pr_body = _build_followup_pr_body(result, outcome, user_branch)
         new_pr = client.open_pr(
             owner, repo,
@@ -172,7 +199,6 @@ def propose_agent_fixes(
         )
         outcome.proposed_pr_url = new_pr["html_url"]
         outcome.status = "opened"
-        outcome.workflow_conclusion = "skipped"
         print(f"[propose] follow-up PR opened: {outcome.proposed_pr_url}")
         _post_success_comment(client, result, outcome)
         return outcome
@@ -316,23 +342,120 @@ def _iso_to_epoch(iso: str) -> float:
         return 0.0
 
 
+# Heuristic: derive a Python dotted module path from a repo-relative file path
+# so the agent-generated test's `from solution import ...` boilerplate can be
+# rewritten to a real import. Stripping common src-layout roots (`src/`,
+# `<pkg>-core/src/`) catches airflow + most modern layouts.
+_SRC_ROOT_PATTERNS = (
+    re.compile(r"^[^/]+/src/"),       # e.g. "airflow-core/src/"
+    re.compile(r"^src/"),
+)
+
+
+def _derive_module_path(target_file: str) -> Optional[str]:
+    """Convert e.g. 'airflow-core/src/airflow/utils/file.py' → 'airflow.utils.file'.
+
+    Returns None if the path doesn't look like an importable Python module
+    (e.g. is at the repo root, has no .py suffix, or includes non-identifier
+    path segments).
+    """
+    if not target_file.endswith(".py"):
+        return None
+    p = target_file
+    for rx in _SRC_ROOT_PATTERNS:
+        p = rx.sub("", p, count=1)
+    parts = p[:-3].split("/")  # drop .py, split on '/'
+    if any(not seg.isidentifier() for seg in parts):
+        return None
+    return ".".join(parts)
+
+
+def _rewrite_test_imports(test_code: str, *, target_file: str) -> str:
+    """Rewrite the LLM's `from solution import ...` boilerplate to point at
+    the real module path derived from `target_file`. If we can't derive a
+    valid module path, leave the test as-is and prepend a comment explaining
+    why the reviewer may need to fix imports manually.
+    """
+    module = _derive_module_path(target_file)
+    if module is None:
+        banner = (
+            "# NOTE: imports below assume a placeholder `solution` module —\n"
+            f"# adjust to match `{target_file}` before running pytest.\n"
+        )
+        return banner + test_code
+
+    banner = (
+        f"# Auto-generated by the multi-agent code review pipeline.\n"
+        f"# Rewritten import target: solution → {module}\n"
+    )
+    # `from solution import ...` → `from <module> import ...`
+    rewritten = re.sub(
+        r"\bfrom\s+solution\b",
+        f"from {module}",
+        test_code,
+    )
+    # `import solution`           → `import <module> as solution`  (preserves bare `solution.x` refs)
+    # `import solution as foo`    → `import <module> as foo`       (LLM-chosen alias wins)
+    rewritten = re.sub(
+        r"\bimport\s+solution\s+as\s+([A-Za-z_]\w*)",
+        f"import {module} as \\1",
+        rewritten,
+    )
+    rewritten = re.sub(
+        r"\bimport\s+solution\b(?!\s+as\b)",
+        f"import {module} as solution",
+        rewritten,
+    )
+    return banner + rewritten
+
+
 def _build_followup_pr_body(
     result: "PRReviewResult",
     outcome: AgentProposalOutcome,
     user_branch: str,
 ) -> str:
     total_findings = sum(len(r.state.findings) for r in result.reviews)
-    files_list = "\n".join(f"- `{r.filename}`" for r in result.reviews if r.state.patch)
+    fix_lines = [f"- `{r.filename}`" for r in result.reviews if r.state.patch]
+    test_lines = [
+        f"- `tests/agent_generated/test_{Path(r.filename).stem}.py`"
+        for r in result.reviews
+        if r.state.tests and r.state.tests.test_code
+    ]
+
+    if outcome.workflow_conclusion == "skipped":
+        ci_block = (
+            "**CI status:** ⚙️ skipped — repo has no `workflow_dispatch` "
+            "workflow configured (`SKIP_CI_GATE=1`)."
+        )
+    else:
+        ci_block = (
+            f"**CI status (verified before opening this PR):** "
+            f"✅ green — [{outcome.workflow_conclusion}]({outcome.workflow_run_url})"
+        )
+
+    tests_block = ""
+    if test_lines:
+        tests_block = (
+            f"\n**Agent-generated pytest suites** ({len(test_lines)}):\n"
+            + "\n".join(test_lines)
+            + (
+                "\n\n_Tests are committed but not executed by this pipeline. "
+                "Imports are rewritten from the placeholder `solution` module "
+                "to the real dotted path where derivable; review before running._"
+            )
+        )
+
     return (
         f"## 🤖 Multi-Agent Code Review — suggested fixes\n\n"
         f"This PR proposes fixes for #{result.number} based on **{total_findings}** "
         f"finding(s) the multi-agent reviewer surfaced.\n\n"
-        f"**Files changed by the agent:**\n{files_list}\n\n"
-        f"**CI status (verified before opening this PR):** "
-        f"✅ green — [{outcome.workflow_conclusion}]({outcome.workflow_run_url})\n\n"
-        f"This PR targets `{user_branch}` (the original PR's branch). Merging it "
-        f"applies the agent's suggestions to that branch; the original PR can "
-        f"then be reviewed and merged as usual.\n\n"
+        f"**Files changed by the agent:**\n" + "\n".join(fix_lines) + "\n\n"
+        + tests_block
+        + ("\n\n" if tests_block else "")
+        + ci_block
+        + f"\n\nThis PR targets `{user_branch}` (the original PR's branch). "
+        f"Merging it applies the agent's suggestions to that branch; the "
+        f"original PR can then be reviewed and merged as usual.\n\n"
         f"<sub>Automated proposal — review the diff before merging.</sub>"
     )
 
