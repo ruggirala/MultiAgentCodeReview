@@ -18,12 +18,13 @@
     2: 'Why this exists',
     3: 'System architecture',
     4: 'Pipeline flow',
-    5: 'RAG layer',
-    6: 'Telemetry & dashboard',
-    7: 'Live demo',
-    8: 'Load-test results',
-    9: 'Roadmap',
-    10: 'Thank you',
+    5: 'Under the hood',
+    6: 'RAG layer',
+    7: 'Telemetry & dashboard',
+    8: 'What the agent posts',
+    9: 'Load-test results',
+    10: 'Goals',
+    11: 'Thank you',
   };
 
   function currentSlideIndex() {

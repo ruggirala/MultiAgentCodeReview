@@ -18,8 +18,6 @@
     <span>Multi-Agent Code Review</span>
   </div>
 
-  <span class="title-tag"><span class="dot"></span>Salesforce AI Capstone · 2026</span>
-
   <h1 class="title-hero">Multi-Agent<br>Code Review</h1>
   <p class="subtitle" style="font-size: 1.4rem; max-width: 50ch;">
     A LangGraph pipeline of seven AI agents that reviews every GitHub PR for
@@ -27,9 +25,9 @@
   </p>
 
   <div class="title-meta">
-    <span>By <b style="color: var(--text-2);">Rahul Illa</b></span>
-    <span>·</span>
-    <span><code>github.com/rahulilla/MultiAgentCodeReview</code></span>
+    <a href="https://github.com/rahulilla/MultiAgentCodeReview" target="_blank" rel="noreferrer" style="color: var(--accent); text-decoration: none;">
+      <code>github.com/rahulilla/MultiAgentCodeReview</code>
+    </a>
   </div>
 </section>
 
@@ -72,62 +70,102 @@
   <h1 class="section-title">System architecture</h1>
   <p class="subtitle">A LangGraph state machine routing one shared <code>ReviewState</code> through seven agents.</p>
 
-  <div class="arch-grid">
-    <!-- Left: knowledge sources -->
-    <div class="arch-left">
-      <div class="arch-side-label">Knowledge sources</div>
-      <div class="diagram-node" data-color="green" data-dashed="true">
+  <div class="arch-stage">
+    <!-- ambient particle grid for depth -->
+    <div class="arch-bg-grid"></div>
+
+    <!-- SVG layer for animated connectors (curved dashed paths) -->
+    <svg class="arch-svg" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="g-rag" x1="0" x2="1">
+          <stop offset="0%" stop-color="#34D399"/>
+          <stop offset="100%" stop-color="#34D399" stop-opacity="0.2"/>
+        </linearGradient>
+        <linearGradient id="g-llm" x1="1" x2="0">
+          <stop offset="0%" stop-color="#A78BFA"/>
+          <stop offset="100%" stop-color="#A78BFA" stop-opacity="0.2"/>
+        </linearGradient>
+        <linearGradient id="g-tel" x1="1" x2="0">
+          <stop offset="0%" stop-color="#F472B6"/>
+          <stop offset="100%" stop-color="#F472B6" stop-opacity="0.2"/>
+        </linearGradient>
+      </defs>
+
+      <!-- RAG fan-in (3 dashed green arrows from left into Security/Bug/Style) -->
+      <path class="flow rag" d="M 230 110 C 360 110, 380 270, 480 270" stroke="url(#g-rag)" />
+      <path class="flow rag" d="M 230 220 C 360 220, 400 270, 480 270" stroke="url(#g-rag)" />
+      <path class="flow rag" d="M 230 330 C 360 330, 410 290, 480 290" stroke="url(#g-rag)" />
+
+      <!-- LLM fan-in (purple, dashed) into the analysis row -->
+      <path class="flow llm" d="M 770 110 C 660 110, 640 270, 520 270" stroke="url(#g-llm)" />
+      <path class="flow llm" d="M 770 220 C 660 220, 620 280, 520 280" stroke="url(#g-llm)" />
+
+      <!-- Iterate loop (purple dashed) — Triage → Security (human review back-edge) -->
+      <path class="flow iterate" d="M 500 460 C 320 460, 320 270, 470 270" stroke="#A78BFA" />
+      <text x="332" y="430" class="flow-label" fill="#A78BFA">human-in-loop</text>
+
+      <!-- Telemetry tap-line (pink, dashed) from Patch into events.jsonl -->
+      <path class="flow tel" d="M 600 460 C 720 460, 760 460, 820 460" stroke="url(#g-tel)" />
+    </svg>
+
+    <!-- Knowledge sources column -->
+    <div class="arch-col arch-knowledge">
+      <div class="arch-side-label green">Knowledge</div>
+      <div class="diagram-node liv" data-color="green" data-dashed="true">
         <span class="nlabel">CWE corpus</span>
+        <span class="nsub">~1,400 weaknesses</span>
       </div>
-      <div class="diagram-node" data-color="green" data-dashed="true">
+      <div class="diagram-node liv" data-color="green" data-dashed="true">
         <span class="nlabel">OWASP Top-10</span>
+        <span class="nsub">2021 categories</span>
       </div>
-      <div class="diagram-node" data-color="green" data-dashed="true">
+      <div class="diagram-node liv" data-color="green" data-dashed="true">
         <span class="nlabel">ChromaDB</span>
         <span class="nsub">all-MiniLM-L6-v2</span>
       </div>
     </div>
 
-    <!-- Center: pipeline -->
-    <div class="arch-center">
-      <div class="diagram-node" data-color="blue">
+    <!-- Center pipeline column -->
+    <div class="arch-col arch-pipeline">
+      <div class="diagram-node liv" data-color="blue">
         <span class="nlabel">GitHub PR</span>
         <span class="nsub">webhook → watcher</span>
       </div>
-      <div class="arch-arrow"></div>
-      <div class="diagram-node" data-color="cyan">
+      <div class="arrow-pulse"></div>
+      <div class="diagram-node liv" data-color="cyan">
         <span class="nlabel">Orchestrator</span>
-        <span class="nsub">tree-sitter chunking</span>
+        <span class="nsub">tree-sitter chunks</span>
       </div>
-      <div class="arch-arrow"></div>
-      <div class="diagram-node" data-color="amber" style="min-width: 280px; padding: 18px 24px;">
+      <div class="arrow-pulse"></div>
+      <div class="diagram-node liv glowing" data-color="amber" style="min-width: 320px; padding: 16px 24px;">
         <span class="nlabel">Security · Bug · Style/Perf</span>
-        <span class="nsub">three analysis agents · shared state</span>
+        <span class="nsub">three analysis agents · shared <code>ReviewState</code></span>
       </div>
-      <div class="arch-arrow"></div>
-      <div class="diagram-node" data-color="pink">
+      <div class="arrow-pulse"></div>
+      <div class="diagram-node liv" data-color="pink">
         <span class="nlabel">Triage → Patch → Tests</span>
-        <span class="nsub">conditional human-in-loop</span>
+        <span class="nsub">conditional routing</span>
       </div>
-      <div class="arch-arrow"></div>
-      <div class="diagram-node" data-color="green">
+      <div class="arrow-pulse"></div>
+      <div class="diagram-node liv" data-color="green">
         <span class="nlabel">PR comment + follow-up PR</span>
+        <span class="nsub">posted to GitHub</span>
       </div>
     </div>
 
-    <!-- Right: LLM + telemetry -->
-    <div class="arch-right">
-      <div class="arch-side-label">LLM backend</div>
-      <div class="diagram-node" data-color="purple">
+    <!-- LLM + telemetry column -->
+    <div class="arch-col arch-llm">
+      <div class="arch-side-label purple">LLM backend</div>
+      <div class="diagram-node liv" data-color="purple">
         <span class="nlabel">GPT-4o</span>
         <span class="nsub">primary</span>
       </div>
-      <div class="diagram-node" data-color="purple">
+      <div class="diagram-node liv" data-color="purple">
         <span class="nlabel">CodeLlama-7B</span>
         <span class="nsub">4-bit fallback</span>
       </div>
-      <div class="arch-side-label" style="margin-top: 14px;">Telemetry</div>
-      <div class="diagram-node" data-color="pink">
+      <div class="arch-side-label pink" style="margin-top: 18px;">Telemetry</div>
+      <div class="diagram-node liv" data-color="pink">
         <span class="nlabel">events.jsonl</span>
         <span class="nsub">→ Streamlit dashboard</span>
       </div>
@@ -195,9 +233,74 @@
 </section>
 
 <!-- ============================================================
-     Slide 5 — RAG layer
+     Slide 5 — Implementation deep-dive
      ============================================================ -->
 <section class="slide" id="5">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">Under the hood</h1>
+  <p class="subtitle">The implementation choices that hold the system together.</p>
+
+  <div class="cols two">
+    <div>
+      <h3 class="purple" style="margin-bottom: 12px;">Tech stack</h3>
+      <div class="tech-grid">
+        <div class="tech-pill"><b>LangGraph</b><span>state machine · conditional routing</span></div>
+        <div class="tech-pill"><b>Pydantic v2</b><span>shared <code>ReviewState</code> · finding schemas</span></div>
+        <div class="tech-pill"><b>tree-sitter</b><span>AST chunking · stdlib <code>ast</code> fallback</span></div>
+        <div class="tech-pill"><b>ChromaDB</b><span>CWE + OWASP RAG store</span></div>
+        <div class="tech-pill"><b>OpenAI · HF</b><span>GPT-4o · CodeLlama-7B (4-bit)</span></div>
+        <div class="tech-pill"><b>pylint + radon</b><span>style + cyclomatic complexity</span></div>
+        <div class="tech-pill"><b>Streamlit + Plotly</b><span>live dashboard · Sankey, KPIs</span></div>
+        <div class="tech-pill"><b>GitHub REST</b><span>watcher · comments · follow-up PRs</span></div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="purple" style="margin-bottom: 12px;">Instrumented LangGraph node</h3>
+      <pre class="code"><span class="c1"># graph/pipeline.py — every node is wrapped once</span>
+<span class="k">def</span> _instrumented(name, fn):
+    <span class="k">def</span> wrapper(state: ReviewState):
+        before = len(state.findings)
+        start  = time.perf_counter()
+        token  = set_current_agent(name, state.run_id)
+        <span class="k">try</span>:
+            <span class="k">return</span> fn(state)
+        <span class="k">finally</span>:
+            reset_current_agent(token)
+            record(<span class="v">AgentEvent</span>(
+                run_id=state.run_id,
+                agent_name=name,
+                duration_sec=time.perf_counter()-start,
+                findings_added=len(state.findings)-before,
+            ))
+    <span class="k">return</span> wrapper</pre>
+      <p class="muted" style="font-size: 0.85rem; margin: 6px 0 0;">
+        A single decorator gives every agent timing, findings-delta, and per-LLM-call attribution
+        (via <code>contextvars.ContextVar</code>) — no per-agent boilerplate.
+      </p>
+    </div>
+  </div>
+
+  <div class="cols three" style="margin-top: 22px; gap: 16px;">
+    <div class="problem-card" style="padding: 16px 18px;">
+      <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why LangGraph</h3>
+      <p style="font-size: 0.86rem; line-height: 1.5;">Explicit conditional edges &gt; chained agents. Lets us route Critical/High security findings to a real human-review interrupt, not a hallucinated decision.</p>
+    </div>
+    <div class="problem-card" style="padding: 16px 18px;">
+      <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why JSONL telemetry</h3>
+      <p style="font-size: 0.86rem; line-height: 1.5;">Append-only file is the simplest crash-safe store. No DB to operate. Streamlit tails it directly. Easy to migrate to DuckDB later if it grows.</p>
+    </div>
+    <div class="problem-card" style="padding: 16px 18px;">
+      <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why hybrid LLM</h3>
+      <p style="font-size: 0.86rem; line-height: 1.5;">GPT-4o for quality on the dev path. CodeLlama-7B (4-bit) means the system runs end-to-end on a Colab T4 with no API key — keyless reproducibility for graders.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Slide 6 — RAG layer
+     ============================================================ -->
+<section class="slide" id="6">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Grounded with RAG</h1>
   <p class="subtitle">Findings cite specific CWEs and OWASP categories instead of hallucinating. Toggle with <code>USE_RAG=1</code>.</p>
@@ -243,117 +346,106 @@
 </section>
 
 <!-- ============================================================
-     Slide 6 — Telemetry + dashboard
+     Slide 7 — Telemetry + dashboard
      ============================================================ -->
-<section class="slide" id="6">
+<section class="slide" id="7">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Telemetry &amp; dashboard</h1>
   <p class="subtitle">Every run emits structured events — a Streamlit app tails them in real time.</p>
 
-  <div class="cols two">
-    <div>
-      <h3 class="purple" style="margin-bottom: 10px;">Four event types</h3>
-      <div class="kpi-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="kpi"><div class="kpi-inner">
-          <div class="kpi-label">pr_review</div>
-          <div class="kpi-sub">one per PR · counts, severities, duration</div>
-        </div></div>
-        <div class="kpi"><div class="kpi-inner">
-          <div class="kpi-label">agent</div>
-          <div class="kpi-sub">one per LangGraph node · timing, errors</div>
-        </div></div>
-        <div class="kpi"><div class="kpi-inner">
-          <div class="kpi-label">llm_call</div>
-          <div class="kpi-sub">one per call_llm() · backend, tokens, retries</div>
-        </div></div>
-        <div class="kpi"><div class="kpi-inner">
-          <div class="kpi-label">poll_cycle</div>
-          <div class="kpi-sub">one per watcher poll · throughput, errors</div>
-        </div></div>
-      </div>
+  <figure class="dashboard-shot">
+    <img src="assets/dashboard.png" alt="Multi-Agent Code Review dashboard — Overview tab" loading="lazy">
+    <figcaption>
+      <span class="cap-pip"></span>
+      Live Streamlit dashboard — Overview tab. KPI cards with sparklines, recent-activity table linking back to each PR. Auto-refreshes every 10s.
+    </figcaption>
+  </figure>
 
-      <p class="muted" style="margin-top: 18px; font-size: 0.92rem;">
-        Append-only line-delimited JSON in <code>runs/events.jsonl</code>. No DB,
-        crash-safe, trivially tailable. <code>contextvars.ContextVar</code>
-        attributes every LLM call back to the agent that made it.
-      </p>
-    </div>
-
-    <div>
-      <h3 class="purple" style="margin-bottom: 10px;">Dashboard surfaces</h3>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div><h3>Overview KPIs with sparklines</h3><p>PRs reviewed · findings · throughput · agent error rate · avg review duration. Dashboard's purple-blue gradient cards.</p></div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div><h3>Agent-interaction Sankey</h3><p>Aggregated edge counts across runs — exactly which paths the LangGraph state machine took.</p></div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div><h3>Per-agent duration box-plot</h3><p>Distribution of latency by agent. Catches outliers like a tree-sitter parse blow-up.</p></div>
-        </div>
-        <div class="step">
-          <div class="step-num">4</div>
-          <div><h3>LLM telemetry</h3><p>Calls per backend/model, total tokens, retry rate, p95 latency.</p></div>
-        </div>
-      </div>
-    </div>
+  <div class="event-strip">
+    <div class="ev-pill"><b class="purple">pr_review</b><span>one per PR · counts, severities, duration</span></div>
+    <div class="ev-pill"><b class="purple">agent</b><span>one per LangGraph node · timing, errors</span></div>
+    <div class="ev-pill"><b class="purple">llm_call</b><span>one per call_llm() · backend, tokens, retries</span></div>
+    <div class="ev-pill"><b class="purple">poll_cycle</b><span>one per watcher poll · throughput, errors</span></div>
   </div>
+
+  <p class="muted" style="margin-top: 14px; font-size: 0.88rem;">
+    Append-only JSONL in <code>runs/events.jsonl</code>. No DB, crash-safe, trivially tailable. A
+    <code>contextvars.ContextVar</code> attributes every LLM call back to the agent that made it.
+  </p>
 </section>
 
 <!-- ============================================================
-     Slide 7 — Live demo flow
-     ============================================================ -->
-<section class="slide" id="7">
-  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
-  <h1 class="section-title">Live demo flow</h1>
-  <p class="subtitle">Three terminals + your browser. The PR is the only thing the user does — the rest is automatic.</p>
-
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div>
-        <h3>Start the watcher</h3>
-        <p><code>SKIP_CI_GATE=1 python watch_prs.py rahulilla/airflow</code> — pre-seeds existing open PRs, polls every 20s.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div>
-        <h3>Start the dashboard</h3>
-        <p><code>streamlit run dashboard/app.py</code> — opens at <code>localhost:8501</code>, auto-refreshes every 10s.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div>
-        <h3>Open a PR on the fork</h3>
-        <p>Any <code>.py</code> change on <code>rahulilla/airflow</code>. Within one poll cycle, the watcher detects it and runs the multi-agent pipeline.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div>
-        <h3>Watch the artifacts appear</h3>
-        <p>Comment posts on the PR with severity table + every finding · Markdown report + ZIP saved locally · sibling branch with the agent's fixed code · follow-up PR opens automatically.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">5</div>
-      <div>
-        <h3>Refresh the dashboard</h3>
-        <p>New event lands in <code>events.jsonl</code> → KPIs tick up → Sankey edge thickens → LLM tab shows tokens spent.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     Slide 8 — Load test results
+     Slide 8 — What the agent posts
      ============================================================ -->
 <section class="slide" id="8">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">What the agent posts</h1>
+  <p class="subtitle">Every PR gets a structured review comment with a per-file severity table, every finding spelled out with location + CWE + suggested fix.</p>
+
+  <div class="comment-mock">
+    <div class="cm-head">
+      <div class="cm-avatar">🤖</div>
+      <div>
+        <div class="cm-author">multi-agent-bot <span class="cm-meta">commented on rahulilla/airflow#13 · path-traversal</span></div>
+        <div class="cm-meta">Jun 17, 2026 · CWE-22, CWE-89 · 26 findings · flagged for human review</div>
+      </div>
+    </div>
+    <div class="cm-body">
+      <h3 style="margin: 0 0 10px;">🤖 Multi-Agent Code Review</h3>
+      <p class="muted" style="margin: 0 0 14px; font-size: 0.92rem;">
+        Reviewed <b style="color: var(--text-2);">1</b> changed Python file at <code>30eefd70de</code> — <b style="color: var(--text-2);">26</b> findings.
+      </p>
+
+      <table class="cm-table">
+        <thead>
+          <tr><th>File</th><th>🔴 Critical</th><th>🟠 High</th><th>🟡 Medium</th><th>⚪ Low</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>airflow-core/src/airflow/utils/file.py</code></td>
+            <td>0</td><td class="hi">7</td><td>13</td><td>6</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="cm-finding">
+        <div class="cm-fhead">
+          <span class="sev sev-high">High</span>
+          <span class="cat">Security</span>
+          <span class="cwe">CWE-22</span>
+          <span class="loc">line 193</span>
+        </div>
+        <div class="cm-ftitle">Path Traversal in <code>read_user_file</code></div>
+        <p>Function concatenates user input directly into a file path without validation. An attacker could supply a filename with <code>../</code> sequences to access unauthorized files on the server.</p>
+        <div class="cm-fix"><b class="green">Fix:</b> Use <code>os.path.join</code> + reject <code>..</code> traversal, or constrain reads to a sandbox dir via <code>Path.resolve().relative_to(BASE)</code>.</div>
+      </div>
+
+      <div class="cm-finding">
+        <div class="cm-fhead">
+          <span class="sev sev-high">High</span>
+          <span class="cat">Bug</span>
+          <span class="loc">line 64</span>
+        </div>
+        <div class="cm-ftitle">Resource leak in <code>open_maybe_zipped</code></div>
+        <p>Opens a file via <code>zipfile.ZipFile</code> + <code>open</code> but does not close them — handles leak under heavy DAG-discovery load.</p>
+        <div class="cm-fix"><b class="green">Fix:</b> Use a <code>with</code> context manager so resources release deterministically.</div>
+      </div>
+
+      <div class="cm-meta" style="margin-top: 12px; font-size: 0.8rem;">
+        ⚠️ Critical/High security findings flagged for human review. _Full report, fixed code, and generated tests bundled locally._
+      </div>
+    </div>
+  </div>
+
+  <p class="muted" style="margin-top: 14px; font-size: 0.85rem; text-align: center;">
+    Real comment generated in 71.6s · 1,306 tokens · agent-suggested-fix branch opened automatically
+  </p>
+</section>
+
+<!-- ============================================================
+     Slide 9 — Load test results
+     ============================================================ -->
+<section class="slide" id="9">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Load-tested in production conditions</h1>
   <p class="subtitle">30 deliberately-buggy PRs opened sequentially against the airflow fork. Watcher live, dashboard recording every event.</p>
@@ -433,57 +525,86 @@
 </section>
 
 <!-- ============================================================
-     Slide 9 — Roadmap
+     Slide 10 — Goals
      ============================================================ -->
-<section class="slide" id="9">
+<section class="slide" id="10">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
-  <h1 class="section-title">Roadmap</h1>
-  <p class="subtitle">Where we are, and where this goes next.</p>
+  <h1 class="section-title">What success looks like</h1>
+  <p class="subtitle">Specific, measurable goals — not just "more features." Today's numbers in <span class="purple">purple</span>; targets we're chasing in <span class="green">green</span>.</p>
 
-  <div class="timeline">
-    <div class="tstep" data-color="green">
-      <div class="tdot"></div>
-      <div class="twhen">May – Jun 2026</div>
-      <div class="ttitle">Shipped</div>
-      <div class="tsub">Full pipeline + load test</div>
+  <div class="goal-grid">
+    <div class="goal-card">
+      <div class="goal-label">Review latency p95</div>
+      <div class="goal-row">
+        <span class="goal-now">93s <span class="goal-tag">today</span></span>
+        <span class="goal-arrow">→</span>
+        <span class="goal-target">&lt; 30s</span>
+      </div>
+      <div class="goal-bar"><span style="width: 32%;"></span></div>
+      <p>Drop median LLM latency by parallelizing security/bug/style nodes and switching analysis-only to a faster model.</p>
     </div>
-    <div class="tstep" data-color="blue">
-      <div class="tdot"></div>
-      <div class="twhen">Q3 2026</div>
-      <div class="ttitle">Next</div>
-      <div class="tsub">Multi-language support</div>
-    </div>
-    <div class="tstep" data-color="amber">
-      <div class="tdot"></div>
-      <div class="twhen">Q4 2026</div>
-      <div class="ttitle">Later</div>
-      <div class="tsub">VSCode + Slack integrations</div>
-    </div>
-    <div class="tstep" data-color="purple">
-      <div class="tdot"></div>
-      <div class="twhen">2027</div>
-      <div class="ttitle">Vision</div>
-      <div class="tsub">Self-hosted GitHub Action</div>
-    </div>
-  </div>
 
-  <div class="timeline-detail">
-    <h3 class="green" style="margin-bottom: 8px;">Shipped this capstone</h3>
-    <ul>
-      <li>LangGraph state machine with 7 agents + conditional routing</li>
-      <li>GPT-4o primary / CodeLlama-7B (4-bit) keyless fallback</li>
-      <li>GitHub PR watcher + auto-comment + follow-up-PR proposer</li>
-      <li>RAG grounding with CWE + OWASP corpora in ChromaDB</li>
-      <li>Structured telemetry (4 event types) + Streamlit dashboard</li>
-      <li>30-PR load test against airflow fork (0 failures)</li>
-    </ul>
+    <div class="goal-card">
+      <div class="goal-label">OWASP Top-10 catch rate</div>
+      <div class="goal-row">
+        <span class="goal-now">~85% <span class="goal-tag">today</span></span>
+        <span class="goal-arrow">→</span>
+        <span class="goal-target">&gt; 95%</span>
+      </div>
+      <div class="goal-bar"><span style="width: 85%;"></span></div>
+      <p>Expand the RAG corpus with worked examples per CWE; add a benchmarking PR set covering all 10 OWASP categories.</p>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-label">False-positive rate</div>
+      <div class="goal-row">
+        <span class="goal-now">est. 12% <span class="goal-tag">today</span></span>
+        <span class="goal-arrow">→</span>
+        <span class="goal-target">&lt; 5%</span>
+      </div>
+      <div class="goal-bar"><span style="width: 25%;"></span></div>
+      <p>Add a confirmation pass that re-reads the code before posting High/Critical findings; reject ones that don't survive a second look.</p>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-label">Languages supported</div>
+      <div class="goal-row">
+        <span class="goal-now">1 <span class="goal-tag">Python</span></span>
+        <span class="goal-arrow">→</span>
+        <span class="goal-target">3+</span>
+      </div>
+      <div class="goal-bar"><span style="width: 33%;"></span></div>
+      <p>tree-sitter already supports Java/JS/Go grammars. Bug + style agents need lang-aware prompts; security agent stays largely portable.</p>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-label">Cost per PR review</div>
+      <div class="goal-row">
+        <span class="goal-now">~$0.14 <span class="goal-tag">GPT-4o</span></span>
+        <span class="goal-arrow">→</span>
+        <span class="goal-target">&lt; $0.05</span>
+      </div>
+      <div class="goal-bar"><span style="width: 36%;"></span></div>
+      <p>Route trivial diffs to GPT-4o-mini; reserve GPT-4o for high-severity nodes. Cache common boilerplate prompts.</p>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-label">Reach</div>
+      <div class="goal-row">
+        <span class="goal-now">2 repos <span class="goal-tag">forks</span></span>
+        <span class="goal-arrow">→</span>
+        <span class="goal-target">100+ repos</span>
+      </div>
+      <div class="goal-bar"><span style="width: 2%;"></span></div>
+      <p>Package the watcher as a one-line GitHub Action so any team can drop it in. Self-serve install, no infra to run.</p>
+    </div>
   </div>
 </section>
 
 <!-- ============================================================
-     Slide 10 — Q&A / Links
+     Slide 11 — Q&A / Links
      ============================================================ -->
-<section class="slide" id="10">
+<section class="slide" id="11">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
 
   <h1 class="title-hero" style="font-size: 4.5rem; margin-bottom: 8px;">Thank you.</h1>
@@ -503,16 +624,10 @@
       <div class="lk-text">Open in Colab <span class="lk-arrow">→</span></div>
     </a>
   </div>
-
-  <div class="title-meta" style="margin-top: 60px;">
-    <span>Built by <b style="color: var(--text-2);">Rahul Illa</b></span>
-    <span>·</span>
-    <span>Salesforce AI Capstone · 2026</span>
-  </div>
 </section>
 
 <!-- Bottom-fixed nav and counter -->
-<div class="deck-counter"><b id="counter-current">1</b> / 10 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
+<div class="deck-counter"><b id="counter-current">1</b> / 11 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
 <div class="deck-nav">
   <button id="prev-btn">← Prev</button>
   <button id="next-btn">Next →</button>
