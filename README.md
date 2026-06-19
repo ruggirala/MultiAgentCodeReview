@@ -5,6 +5,8 @@ An AI-powered multi-agent system that reviews Python code from multiple angles
 It can review a local file or a **live GitHub pull request** and post its analysis
 back as a PR comment.
 
+> **Slides:** [rahulilla.github.io/MultiAgentCodeReview](https://rahulilla.github.io/MultiAgentCodeReview/) — 10-slide deck on architecture, telemetry, and load-test results.
+
 ## Architecture
 
 A [LangGraph](https://github.com/langchain-ai/langgraph) state machine orchestrates

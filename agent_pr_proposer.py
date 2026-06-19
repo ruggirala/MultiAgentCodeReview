@@ -22,6 +22,7 @@ the watcher.
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
@@ -154,6 +155,28 @@ def propose_agent_fixes(
     print(f"[propose] committed fixes -> {new_sha[:10]} on {agent_branch}")
 
     # --- 6. dispatch CI on the agent branch -------------------------------
+    # SKIP_CI_GATE=1 bypasses the entire dispatch+poll path. Use this on repos
+    # without a `workflow_dispatch`-able CI workflow (e.g. the airflow fork);
+    # the follow-up PR is opened straight from the committed fixes.
+    if os.environ.get("SKIP_CI_GATE") == "1":
+        print("[propose] SKIP_CI_GATE=1 — skipping CI dispatch/poll, opening "
+              "follow-up PR directly.")
+        pr_body = _build_followup_pr_body(result, outcome, user_branch)
+        new_pr = client.open_pr(
+            owner, repo,
+            title=f"Suggested fixes for #{number}: {result.title}",
+            head=agent_branch,
+            base=user_branch,
+            body=pr_body,
+            draft=False,
+        )
+        outcome.proposed_pr_url = new_pr["html_url"]
+        outcome.status = "opened"
+        outcome.workflow_conclusion = "skipped"
+        print(f"[propose] follow-up PR opened: {outcome.proposed_pr_url}")
+        _post_success_comment(client, result, outcome)
+        return outcome
+
     try:
         client.dispatch_workflow(owner, repo, workflow_file, ref=agent_branch)
     except GitHubError as exc:

@@ -1,0 +1,606 @@
+/* ===========================================================
+ * Multi-Agent Code Review — capstone slide deck.
+ * Color tokens copied verbatim from the Streamlit dashboard
+ * so the deck and the live app feel like one product.
+ * =========================================================== */
+
+:root {
+  --accent:    #A78BFA;
+  --accent-2:  #60A5FA;
+  --accent-3:  #34D399;
+  --accent-4:  #F472B6;
+  --accent-5:  #FBBF24;
+  --accent-6:  #F87171;
+  --accent-7:  #22D3EE;
+
+  --bg:        #0B0E14;
+  --panel:     #141821;
+  --panel-2:   #0F1320;
+  --border:    #1F2937;
+  --muted:     #9CA3AF;
+  --text:      #E5E7EB;
+  --text-2:    #F3F4F6;
+
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 8px 22px rgba(167, 139, 250, 0.25);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+               Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 80% -20%, rgba(167,139,250,0.10), transparent 70%),
+    radial-gradient(ellipse 60% 60% at 0% 100%, rgba(96,165,250,0.07), transparent 70%),
+    var(--bg);
+}
+
+/* ----------------------------------------------------------- *
+ *  Slide layout
+ * ----------------------------------------------------------- */
+.slide {
+  min-height: 100vh;
+  width: 100%;
+  padding: 5vh 8vw 8vh;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.slide + .slide {
+  border-top: 1px solid rgba(31, 41, 55, 0.4);
+}
+
+/* Brand chip in the top-right corner (matches dashboard hero) */
+.brand-chip {
+  position: absolute;
+  top: 28px;
+  right: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.brand-chip-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #6D28D9 0%, #A78BFA 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: var(--shadow-glow);
+}
+
+/* ----------------------------------------------------------- *
+ *  Typography
+ * ----------------------------------------------------------- */
+h1, h2, h3 { color: var(--text-2); margin: 0; }
+h1 {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+.slide h1.section-title {
+  font-size: 3.2rem;
+  background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-2) 60%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin-bottom: 8px;
+}
+h2 { font-size: 1.5rem; font-weight: 600; }
+h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: 0.02em; }
+
+.subtitle {
+  color: var(--muted);
+  font-size: 1.1rem;
+  margin: 12px 0 28px;
+  max-width: 60ch;
+}
+
+p { color: var(--text); }
+
+code, .mono {
+  font-family: var(--font-mono);
+  color: #C4B5FD;
+  background: rgba(167, 139, 250, 0.10);
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.95em;
+}
+
+.muted { color: var(--muted); }
+.purple { color: var(--accent); }
+.blue { color: var(--accent-2); }
+.green { color: var(--accent-3); }
+.pink { color: var(--accent-4); }
+.amber { color: var(--accent-5); }
+.red { color: var(--accent-6); }
+
+/* ----------------------------------------------------------- *
+ *  Slide 1 — title
+ * ----------------------------------------------------------- */
+.title-slide {
+  align-items: flex-start;
+}
+.title-hero {
+  font-size: 5.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin: 0 0 18px;
+}
+.title-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.10);
+  border: 1px solid rgba(52, 211, 153, 0.30);
+  color: var(--accent-3);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 22px;
+}
+.title-tag .dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent-3);
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.title-meta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* ----------------------------------------------------------- *
+ *  KPI / stat cards (gradient border, dashboard idiom)
+ * ----------------------------------------------------------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin: 24px 0 0;
+}
+.kpi {
+  position: relative;
+  border-radius: 14px;
+  padding: 1px;
+  background: linear-gradient(135deg,
+      rgba(167,139,250,0.55),
+      rgba(96,165,250,0.18) 55%,
+      rgba(255,255,255,0.04) 100%);
+}
+.kpi-inner {
+  background: var(--panel);
+  border-radius: 13px;
+  padding: 16px 18px 14px;
+}
+.kpi-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+.kpi-value {
+  color: var(--text-2);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.kpi-sub {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+/* ----------------------------------------------------------- *
+ *  Diagram nodes (slides 3, 4, 5)
+ * ----------------------------------------------------------- */
+.diagram {
+  margin: 18px 0;
+  position: relative;
+}
+.diagram-node {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(20, 24, 33, 0.6);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-width: 130px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+}
+.diagram-node[data-color="blue"]   { border-color: var(--accent-2); color: var(--accent-2); }
+.diagram-node[data-color="green"]  { border-color: var(--accent-3); color: var(--accent-3); }
+.diagram-node[data-color="pink"]   { border-color: var(--accent-4); color: var(--accent-4); }
+.diagram-node[data-color="amber"]  { border-color: var(--accent-5); color: var(--accent-5); }
+.diagram-node[data-color="red"]    { border-color: var(--accent-6); color: var(--accent-6); }
+.diagram-node[data-color="cyan"]   { border-color: var(--accent-7); color: var(--accent-7); }
+.diagram-node[data-dashed="true"]  { border-style: dashed; }
+.diagram-node .nlabel {
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+.diagram-node .nsub {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+/* horizontal pipeline row */
+.pipeline-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 18px;
+}
+.pipeline-row .diagram-node {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 8px;
+}
+.pipeline-row .nlabel { font-size: 0.92rem; }
+.pipeline-row .ntime {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  margin-top: 6px;
+}
+
+/* arch slide layout */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 230px;
+  gap: 28px;
+  align-items: center;
+  margin-top: 24px;
+}
+.arch-left, .arch-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.arch-center {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.arch-arrow {
+  width: 2px;
+  height: 22px;
+  background: var(--border);
+  position: relative;
+}
+.arch-arrow::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: -4px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--border);
+}
+.arch-side-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* RAG slide diagram */
+.rag-flow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 22px;
+  align-items: center;
+  margin-top: 24px;
+}
+.rag-flow .arrow-h {
+  height: 2px;
+  background: var(--border);
+  position: relative;
+}
+.rag-flow .arrow-h::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--border);
+}
+
+/* ----------------------------------------------------------- *
+ *  Two/three column content blocks
+ * ----------------------------------------------------------- */
+.cols {
+  display: grid;
+  gap: 22px;
+  margin-top: 24px;
+}
+.cols.two   { grid-template-columns: repeat(2, 1fr); }
+.cols.three { grid-template-columns: repeat(3, 1fr); }
+.cols.four  { grid-template-columns: repeat(4, 1fr); }
+
+.problem-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+}
+.problem-card h3 { margin-bottom: 10px; font-size: 1.15rem; }
+.problem-card .stat {
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  display: block;
+}
+.problem-card p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+
+/* ----------------------------------------------------------- *
+ *  Code block
+ * ----------------------------------------------------------- */
+pre.code {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #C4B5FD;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+pre.code .c1 { color: var(--muted); }
+pre.code .k  { color: var(--accent-4); }
+pre.code .s  { color: var(--accent-3); }
+pre.code .v  { color: var(--accent-2); }
+
+/* ----------------------------------------------------------- *
+ *  Demo flow (slide 7)
+ * ----------------------------------------------------------- */
+.steps {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.step {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: start;
+  gap: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6D28D9, var(--accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.step h3 { margin: 0 0 4px; font-size: 1rem; }
+.step p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+/* ----------------------------------------------------------- *
+ *  Timeline (slide 9)
+ * ----------------------------------------------------------- */
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  position: relative;
+  margin: 36px 0 18px;
+  padding-top: 30px;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 50px;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: var(--border);
+}
+.tstep {
+  text-align: center;
+  position: relative;
+}
+.tdot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  position: relative;
+  z-index: 2;
+  background: var(--bg);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.20),
+              0 0 18px rgba(167, 139, 250, 0.45);
+}
+.tstep[data-color="green"] .tdot { border-color: var(--accent-3); box-shadow: 0 0 0 4px rgba(52,211,153,0.20), 0 0 18px rgba(52,211,153,0.45); }
+.tstep[data-color="blue"]  .tdot { border-color: var(--accent-2); box-shadow: 0 0 0 4px rgba(96,165,250,0.20), 0 0 18px rgba(96,165,250,0.45); }
+.tstep[data-color="amber"] .tdot { border-color: var(--accent-5); box-shadow: 0 0 0 4px rgba(251,191,36,0.20), 0 0 18px rgba(251,191,36,0.45); }
+.tstep[data-color="purple"] .tdot { border-color: var(--accent); }
+.tstep .twhen { color: var(--muted); font-size: 0.85rem; }
+.tstep .ttitle {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 4px 0 6px;
+  letter-spacing: -0.02em;
+}
+.tstep[data-color="green"] .ttitle { color: var(--accent-3); }
+.tstep[data-color="blue"]  .ttitle { color: var(--accent-2); }
+.tstep[data-color="amber"] .ttitle { color: var(--accent-5); }
+.tstep[data-color="purple"] .ttitle { color: var(--accent); }
+.tstep .tsub { color: var(--muted); font-size: 0.85rem; max-width: 18ch; margin: 0 auto; }
+
+.timeline-detail {
+  background: var(--panel);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 12px;
+  padding: 16px 22px;
+  margin-top: 30px;
+  max-width: 480px;
+}
+.timeline-detail ul { margin: 0; padding-left: 0; list-style: none; }
+.timeline-detail li {
+  color: var(--text);
+  font-size: 0.95rem;
+  padding: 4px 0 4px 18px;
+  position: relative;
+}
+.timeline-detail li::before {
+  content: "▸";
+  color: var(--accent-3);
+  position: absolute;
+  left: 0;
+}
+
+/* ----------------------------------------------------------- *
+ *  Q&A buttons (slide 10)
+ * ----------------------------------------------------------- */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 30px 0 0;
+}
+.link-card {
+  display: block;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: border-color 150ms, transform 150ms, background 150ms;
+}
+.link-card:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(167,139,250,0.08), rgba(96,165,250,0.03));
+  transform: translateY(-2px);
+}
+.link-card .lk-label { color: var(--muted); font-size: 0.78rem; letter-spacing: 0.10em; text-transform: uppercase; }
+.link-card .lk-text { font-size: 1.05rem; font-weight: 600; margin-top: 6px; }
+.link-card .lk-arrow { color: var(--accent); margin-left: 8px; }
+
+/* ----------------------------------------------------------- *
+ *  Bottom nav
+ * ----------------------------------------------------------- */
+.deck-nav {
+  position: fixed;
+  bottom: 22px;
+  right: 28px;
+  display: flex;
+  gap: 10px;
+  z-index: 100;
+}
+.deck-nav button {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.deck-nav button:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(167,139,250,0.12), rgba(96,165,250,0.04));
+}
+.deck-counter {
+  position: fixed;
+  bottom: 22px;
+  left: 28px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  z-index: 100;
+}
+.deck-counter b {
+  color: var(--text-2);
+  font-weight: 700;
+}
+
+/* ----------------------------------------------------------- *
+ *  Responsive
+ * ----------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .pipeline-row { grid-template-columns: repeat(4, 1fr); }
+  .arch-grid { grid-template-columns: 1fr; }
+  .timeline { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .slide { padding: 4vh 6vw; }
+  h1 { font-size: 2.4rem; }
+  .title-hero { font-size: 3rem; }
+  .cols.two, .cols.three, .cols.four { grid-template-columns: 1fr; }
+  .pipeline-row { grid-template-columns: repeat(2, 1fr); }
+  .timeline { grid-template-columns: 1fr; }
+  .timeline::before { display: none; }
+}
