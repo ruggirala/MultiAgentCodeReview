@@ -580,9 +580,92 @@
 </section>
 
 <!-- ============================================================
-     Slide 10 — Case studies
+     Slide 10 — Evaluation
      ============================================================ -->
 <section class="slide" id="10">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">Evaluation — recall on planted bugs</h1>
+  <p class="subtitle">Each load-test template plants a bug we know the category of. Did the pipeline catch every planted category? <span class="green">100% — 30/30.</span></p>
+
+  <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="kpi"><div class="kpi-inner">
+      <div class="kpi-label">Templates scored</div>
+      <div class="kpi-value">30</div>
+      <div class="kpi-sub">all 30 load-test PRs</div>
+    </div></div>
+    <div class="kpi"><div class="kpi-inner">
+      <div class="kpi-label">Overall recall</div>
+      <div class="kpi-value green">100%</div>
+      <div class="kpi-sub">30 / 30 templates</div>
+    </div></div>
+    <div class="kpi"><div class="kpi-inner">
+      <div class="kpi-label">Misses</div>
+      <div class="kpi-value">0</div>
+      <div class="kpi-sub">no planted category went undetected</div>
+    </div></div>
+    <div class="kpi"><div class="kpi-inner">
+      <div class="kpi-label">Spot-checked specific bugs</div>
+      <div class="kpi-value">7 / 8</div>
+      <div class="kpi-sub">precise CWE / fingerprint match</div>
+    </div></div>
+  </div>
+
+  <div class="cols two" style="margin-top: 28px;">
+    <div class="problem-card">
+      <h3 class="purple" style="margin-bottom: 14px;">Per-category recall</h3>
+      <div style="display: grid; gap: 10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="width:90px; color:var(--muted); font-size:0.85rem;">Security</span>
+          <div style="flex:1; height:12px; border-radius:6px; background:var(--border); overflow:hidden;">
+            <div style="height:100%; width:100%; background:linear-gradient(90deg, var(--accent-6), var(--accent));"></div>
+          </div>
+          <span style="width:90px; text-align:right; font-family:var(--font-mono); font-size:0.85rem; color:var(--text-2);">10 / 10</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="width:90px; color:var(--muted); font-size:0.85rem;">Bug</span>
+          <div style="flex:1; height:12px; border-radius:6px; background:var(--border); overflow:hidden;">
+            <div style="height:100%; width:100%; background:linear-gradient(90deg, var(--accent-5), var(--accent-2));"></div>
+          </div>
+          <span style="width:90px; text-align:right; font-family:var(--font-mono); font-size:0.85rem; color:var(--text-2);">10 / 10</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="width:90px; color:var(--muted); font-size:0.85rem;">Performance</span>
+          <div style="flex:1; height:12px; border-radius:6px; background:var(--border); overflow:hidden;">
+            <div style="height:100%; width:100%; background:linear-gradient(90deg, var(--accent-2), var(--accent-3));"></div>
+          </div>
+          <span style="width:90px; text-align:right; font-family:var(--font-mono); font-size:0.85rem; color:var(--text-2);">5 / 5</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="width:90px; color:var(--muted); font-size:0.85rem;">Style</span>
+          <div style="flex:1; height:12px; border-radius:6px; background:var(--border); overflow:hidden;">
+            <div style="height:100%; width:100%; background:linear-gradient(90deg, var(--accent-3), var(--accent));"></div>
+          </div>
+          <span style="width:90px; text-align:right; font-family:var(--font-mono); font-size:0.85rem; color:var(--text-2);">6 / 6</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="problem-card">
+      <h3 class="purple" style="margin-bottom: 10px;">What this measures (and what it doesn't)</h3>
+      <ul style="margin: 0; padding-left: 20px; color: var(--text); font-size: 0.86rem; line-height: 1.7;">
+        <li><b class="green">Measures:</b> recall on bugs we deliberately planted — the agent flagged at least one finding in every expected category.</li>
+        <li><b class="amber">Doesn't measure:</b> precision. Each PR also touches real airflow code; surrounding findings (often valid) lack ground truth.</li>
+        <li><b class="amber">Granularity:</b> "category caught" not "exact bug caught." Hand-spot-checks confirm 7 / 8 specific bugs were cited by name + CWE.</li>
+        <li><b class="muted">Method:</b> deterministic — re-run <code>python -m eval.score</code> against <code>load_test/status.json</code> for the same number every time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="muted" style="margin-top: 14px; font-size: 0.82rem; text-align: center;">
+    Full per-template breakdown: <code>eval/results.json</code> ·
+    <a href="https://github.com/rahulilla/MultiAgentCodeReview/blob/main/eval/" target="_blank" rel="noreferrer" style="color: var(--accent-2);">eval/ on GitHub</a>
+  </p>
+</section>
+
+<!-- ============================================================
+     Slide 11 — Case studies
+     ============================================================ -->
+<section class="slide" id="11">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Case studies</h1>
   <p class="subtitle">Five concrete bugs the pipeline caught on real PRs to <code>rahulilla/airflow</code> during the load test. Verbatim agent output, full write-ups linked from each card.</p>
@@ -667,9 +750,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 11 — Goals
+     Slide 12 — Goals
      ============================================================ -->
-<section class="slide" id="11">
+<section class="slide" id="12">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What success looks like</h1>
   <p class="subtitle">Specific, measurable goals — not just "more features." Today's numbers in <span class="purple">purple</span>; targets we're chasing in <span class="green">green</span>.</p>
@@ -744,9 +827,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 12 — Q&A / Links
+     Slide 13 — Q&A / Links
      ============================================================ -->
-<section class="slide" id="12">
+<section class="slide" id="13">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
 
   <h1 class="title-hero" style="font-size: 4.5rem; margin-bottom: 8px;">Thank you.</h1>
@@ -755,7 +838,7 @@
 </section>
 
 <!-- Bottom-fixed nav and counter -->
-<div class="deck-counter"><b id="counter-current">1</b> / 12 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
+<div class="deck-counter"><b id="counter-current">1</b> / 13 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
 <div class="deck-nav">
   <button id="prev-btn">← Prev</button>
   <button id="next-btn">Next →</button>

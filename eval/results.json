@@ -1,0 +1,539 @@
+{
+  "evaluated_at": "2026-06-20T10:02:17+00:00",
+  "source": "load_test/status.json",
+  "summary": {
+    "templates_scored": 30,
+    "overall_hits": 30,
+    "overall_recall": 1.0,
+    "per_category": {
+      "Bug": {
+        "expected_count": 10,
+        "hit_count": 10,
+        "recall": 1.0
+      },
+      "Performance": {
+        "expected_count": 5,
+        "hit_count": 5,
+        "recall": 1.0
+      },
+      "Security": {
+        "expected_count": 10,
+        "hit_count": 10,
+        "recall": 1.0
+      },
+      "Style": {
+        "expected_count": 6,
+        "hit_count": 6,
+        "recall": 1.0
+      }
+    }
+  },
+  "per_template": [
+    {
+      "idx": 1,
+      "name": "sqli-string-concat",
+      "pr_number": 5,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 22
+    },
+    {
+      "idx": 2,
+      "name": "cmdi-shell-true",
+      "pr_number": 6,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 9
+    },
+    {
+      "idx": 3,
+      "name": "eval-on-input",
+      "pr_number": 7,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 21
+    },
+    {
+      "idx": 4,
+      "name": "pickle-untrusted",
+      "pr_number": 8,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 16
+    },
+    {
+      "idx": 5,
+      "name": "hardcoded-api-key",
+      "pr_number": 9,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 25
+    },
+    {
+      "idx": 6,
+      "name": "weak-hash-md5",
+      "pr_number": 10,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 4
+    },
+    {
+      "idx": 7,
+      "name": "insecure-rng-token",
+      "pr_number": 11,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 11
+    },
+    {
+      "idx": 8,
+      "name": "no-tls-verify",
+      "pr_number": 12,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 11
+    },
+    {
+      "idx": 9,
+      "name": "path-traversal",
+      "pr_number": 13,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 26
+    },
+    {
+      "idx": 10,
+      "name": "xxe-elementtree",
+      "pr_number": 14,
+      "expected": [
+        "Security"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 25
+    },
+    {
+      "idx": 11,
+      "name": "mutable-default-arg",
+      "pr_number": 15,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 22
+    },
+    {
+      "idx": 12,
+      "name": "bare-except",
+      "pr_number": 16,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 22
+    },
+    {
+      "idx": 13,
+      "name": "off-by-one-loop",
+      "pr_number": 17,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 22
+    },
+    {
+      "idx": 14,
+      "name": "div-by-zero-unguarded",
+      "pr_number": 18,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 24
+    },
+    {
+      "idx": 15,
+      "name": "missing-return",
+      "pr_number": 19,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 21
+    },
+    {
+      "idx": 16,
+      "name": "int-overflow-assumption",
+      "pr_number": 20,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 24
+    },
+    {
+      "idx": 17,
+      "name": "mutate-while-iter",
+      "pr_number": 21,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 20
+    },
+    {
+      "idx": 18,
+      "name": "race-condition-counter",
+      "pr_number": 22,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 26
+    },
+    {
+      "idx": 19,
+      "name": "shadowed-builtin-list",
+      "pr_number": 23,
+      "expected": [
+        "Bug",
+        "Style"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 21
+    },
+    {
+      "idx": 20,
+      "name": "unawaited-coroutine",
+      "pr_number": 24,
+      "expected": [
+        "Bug"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 25
+    },
+    {
+      "idx": 21,
+      "name": "quadratic-duplicates",
+      "pr_number": 25,
+      "expected": [
+        "Performance"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 23
+    },
+    {
+      "idx": 22,
+      "name": "list-comp-as-generator",
+      "pr_number": 26,
+      "expected": [
+        "Performance"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 23
+    },
+    {
+      "idx": 23,
+      "name": "string-concat-loop",
+      "pr_number": 27,
+      "expected": [
+        "Performance"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 5
+    },
+    {
+      "idx": 24,
+      "name": "naive-recursion-fib",
+      "pr_number": 28,
+      "expected": [
+        "Performance"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 23
+    },
+    {
+      "idx": 25,
+      "name": "blocking-in-async",
+      "pr_number": 29,
+      "expected": [
+        "Performance"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 26
+    },
+    {
+      "idx": 26,
+      "name": "high-cyclomatic-complexity",
+      "pr_number": 30,
+      "expected": [
+        "Style"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 32
+    },
+    {
+      "idx": 27,
+      "name": "duplicated-block",
+      "pr_number": 31,
+      "expected": [
+        "Style"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 25
+    },
+    {
+      "idx": 28,
+      "name": "undocumented-public-api",
+      "pr_number": 32,
+      "expected": [
+        "Style"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 25
+    },
+    {
+      "idx": 29,
+      "name": "magic-numbers",
+      "pr_number": 33,
+      "expected": [
+        "Style"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 23
+    },
+    {
+      "idx": 30,
+      "name": "deep-nesting",
+      "pr_number": 34,
+      "expected": [
+        "Style"
+      ],
+      "actual": [
+        "Bug",
+        "Performance",
+        "Security",
+        "Style"
+      ],
+      "hit": true,
+      "missing": [],
+      "total_findings": 25
+    }
+  ]
+}

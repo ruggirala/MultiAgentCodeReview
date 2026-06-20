@@ -23,9 +23,10 @@
     7: 'What the agent posts',
     8: 'Telemetry & dashboard',
     9: 'Load-test results',
-    10: 'Case studies',
-    11: 'Goals',
-    12: 'Thank you',
+    10: 'Evaluation',
+    11: 'Case studies',
+    12: 'Goals',
+    13: 'Thank you',
   };
 
   function currentSlideIndex() {

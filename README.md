@@ -216,6 +216,22 @@ during the load test, with the agent's verbatim output and suggested fix:
 
 See [`case_studies/README.md`](case_studies/README.md) for the index.
 
+## Evaluation
+
+Recall on planted bugs across the 30 load-test templates:
+
+| Category | Expected | Hit | Recall |
+|---|---|---|---|
+| Security | 10 | 10 | 100% |
+| Bug | 10 | 10 | 100% |
+| Performance | 5 | 5 | 100% |
+| Style | 6 | 6 | 100% |
+| **Overall** | **30** | **30** | **100%** |
+
+Re-run with `python -m eval.score`. Methodology, caveats (we measure recall,
+not precision; "category caught" not "exact bug caught"), and per-template
+breakdown live in [`eval/README.md`](eval/README.md).
+
 ## Project layout
 
 | Path | Purpose |
@@ -232,6 +248,9 @@ See [`case_studies/README.md`](case_studies/README.md) for the index.
 | `metrics/recorder.py` | Pydantic event schemas + JSONL emitter |
 | `dashboard/app.py` | Streamlit dashboard over `runs/events.jsonl` |
 | `load_test/` | 30-PR load-test driver + buggy-code templates |
+| `eval/` | Recall scorer over the 30 templates + results |
+| `case_studies/` | Five real bugs with verbatim agent output |
+| `docs/` | GitHub Pages slide deck (HTML/CSS/JS) |
 | `build_notebook.py` | Generates the Colab notebook |
 
 ## Status
