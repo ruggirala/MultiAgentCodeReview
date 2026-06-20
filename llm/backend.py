@@ -16,10 +16,13 @@ Override with the environment variable ``LLM_BACKEND`` = ``auto`` | ``openai`` |
 
 from __future__ import annotations
 
+import json
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Type, TypeVar
+
+from pydantic import BaseModel
 
 # Loaded lazily so this module imports cleanly even without the deps present.
 try:  # local dev convenience; absent on Colab is fine
@@ -173,6 +176,85 @@ def _call_openai(prompt: str, system: str, temperature: float) -> _LLMResult:
     )
 
 
+def _strictify_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Convert a Pydantic v2 JSON schema into the shape OpenAI Structured
+    Outputs (strict mode) requires:
+
+      * `additionalProperties: false` at every object level
+      * every property listed in `required` (no defaults allowed)
+      * `Optional[T]` becomes `{"type": ["T", "null"]}` (Pydantic emits
+        `anyOf` with null, which works too — left untouched)
+      * `$defs` / `$ref` are inlined-by-reference (OpenAI supports them)
+
+    Walks the schema in-place and returns it.
+    """
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "object":
+                node["additionalProperties"] = False
+                props = node.get("properties") or {}
+                if props:
+                    node["required"] = list(props.keys())
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+    walk(schema)
+    return schema
+
+
+T = TypeVar("T", bound=BaseModel)
+
+
+def _call_openai_structured(
+    prompt: str,
+    system: str,
+    temperature: float,
+    response_model: Type[T],
+) -> tuple[_LLMResult, T]:
+    """Call OpenAI with response_format=json_schema, parse into the model.
+
+    Server-side enforced: the response is guaranteed to either parse into
+    the schema or come back as `refusal` (handled here as an exception).
+    """
+    client = _get_openai_client()
+    backend = get_backend()
+    schema = _strictify_schema(response_model.model_json_schema())
+    resp = client.chat.completions.create(
+        model=backend.model,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=temperature,
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": response_model.__name__,
+                "strict": True,
+                "schema": schema,
+            },
+        },
+    )
+    msg = resp.choices[0].message
+    refusal = getattr(msg, "refusal", None)
+    if refusal:
+        raise RuntimeError(f"OpenAI refused structured response: {refusal}")
+    text = msg.content or ""
+    usage = getattr(resp, "usage", None)
+    parsed = response_model.model_validate_json(text)
+    return (
+        _LLMResult(
+            text=text,
+            prompt_tokens=getattr(usage, "prompt_tokens", None) if usage else None,
+            completion_tokens=getattr(usage, "completion_tokens", None) if usage else None,
+            total_tokens=getattr(usage, "total_tokens", None) if usage else None,
+        ),
+        parsed,
+    )
+
+
 def _call_codellama(prompt: str, system: str, temperature: float) -> _LLMResult:
     model, tokenizer = _load_codellama()
     # CodeLlama-Instruct chat format.
@@ -259,3 +341,89 @@ def call_llm(
             time.sleep(wait)
 
     raise RuntimeError(f"LLM call failed after {MAX_RETRIES} attempts") from last_exc
+
+
+def call_llm_structured(
+    prompt: str,
+    response_model: Type[T],
+    *,
+    system: str = "You are a senior Python engineer.",
+    temperature: float = DEFAULT_TEMPERATURE,
+) -> T:
+    """
+    Call the LLM and return a validated Pydantic model instance.
+
+    On the OpenAI backend, uses `response_format={"type": "json_schema",
+    strict: true}` — OpenAI guarantees the response matches the schema
+    server-side. There is no parse-and-pray; the API either returns
+    schema-conformant JSON or refuses.
+
+    On the CodeLlama (keyless) path, `response_format` is unsupported, so
+    we fall back to a polite-ask prompt + lenient JSON parsing into the
+    same model. Behavior matches `call_llm` semantics for that backend.
+
+    Same retry + telemetry envelope as `call_llm`. Raises after
+    MAX_RETRIES failed attempts.
+    """
+    from metrics import LLMCallEvent, current_agent, record
+
+    backend = get_backend()
+    last_exc: Optional[Exception] = None
+
+    for attempt in range(MAX_RETRIES):
+        agent_name, run_id = current_agent()
+        start = time.perf_counter()
+        try:
+            if backend.kind == "openai":
+                raw_result, parsed = _call_openai_structured(
+                    prompt, system, temperature, response_model
+                )
+            else:
+                # CodeLlama path: instruct the model to emit JSON matching the
+                # schema, then parse leniently. This is the same approach the
+                # old code used — kept here so keyless reproducibility works.
+                schema = response_model.model_json_schema()
+                augmented = (
+                    f"{prompt}\n\nReturn ONLY a valid JSON object matching this "
+                    f"schema (no prose, no markdown fences):\n"
+                    f"{json.dumps(schema, indent=2)}"
+                )
+                raw_result = _call_codellama(augmented, system, temperature)
+                parsed = response_model.model_validate_json(raw_result.text.strip())
+            record(
+                LLMCallEvent(
+                    run_id=run_id,
+                    agent_name=agent_name,
+                    backend=backend.kind,
+                    model=backend.model,
+                    prompt_tokens=raw_result.prompt_tokens,
+                    completion_tokens=raw_result.completion_tokens,
+                    total_tokens=raw_result.total_tokens,
+                    duration_sec=time.perf_counter() - start,
+                    attempt=attempt + 1,
+                )
+            )
+            return parsed
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            record(
+                LLMCallEvent(
+                    run_id=run_id,
+                    agent_name=agent_name,
+                    backend=backend.kind,
+                    model=backend.model,
+                    duration_sec=time.perf_counter() - start,
+                    attempt=attempt + 1,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+            )
+            wait = 2 ** attempt
+            print(
+                f"[llm] structured call failed (attempt {attempt + 1}/"
+                f"{MAX_RETRIES}): {exc}. Retrying in {wait}s…"
+            )
+            time.sleep(wait)
+
+    raise RuntimeError(
+        f"Structured LLM call failed after {MAX_RETRIES} attempts"
+    ) from last_exc

@@ -23,9 +23,8 @@ from __future__ import annotations
 
 import os
 
-from agents.common import parse_findings_json
-from llm.backend import call_llm
-from models.schemas import Category, ReviewState
+from llm.backend import call_llm_structured
+from models.schemas import Category, Finding, FindingsResponse, ReviewState
 
 AGENT_NAME = "security_agent"
 
@@ -34,22 +33,18 @@ SYSTEM = (
     "real, exploitable vulnerabilities and map each to a CWE identifier."
 )
 
-# Base prompt — used directly when RAG is off, and as the suffix when RAG is on.
+# JSON shape is enforced server-side via OpenAI Structured Outputs
+# (see llm.backend.call_llm_structured). The prompt focuses on WHAT to
+# look for, not the response format.
 PROMPT_TEMPLATE = """{rag_context}Analyze the Python code below for SECURITY vulnerabilities only.
 Focus on the OWASP Top 10 and common CWE classes: SQL/command injection,
 hardcoded credentials/secrets, weak or plaintext password handling, unsafe
 deserialization, path traversal, use of eval/exec, missing input validation,
 and insecure cryptography.
 
-Return ONLY a JSON array. Each element must have these keys:
-  "line": integer line number (approximate, 1-based) or null
-  "severity": one of "Critical", "High", "Medium", "Low"
-  "title": short summary of the vulnerability
-  "description": what is wrong and how it could be exploited
-  "cwe": the CWE id like "CWE-89", or null
-  "recommendation": how to fix it
-
-If there are no security issues, return [].
+Set every finding's `category` to "Security" and populate `cwe` (e.g. "CWE-89")
+when the issue maps to a known weakness class. If there are no security issues,
+return an empty findings array.
 
 CODE:
 ```python
@@ -90,8 +85,20 @@ def analyze(state: ReviewState) -> ReviewState:
         prompt = PROMPT_TEMPLATE.format(
             rag_context=rag_context, code=state.source_code
         )
-        raw = call_llm(prompt, system=SYSTEM)
-        findings = parse_findings_json(raw, AGENT_NAME, Category.SECURITY)
+        response = call_llm_structured(prompt, FindingsResponse, system=SYSTEM)
+        findings = [
+            Finding(
+                category=w.category if w.category else Category.SECURITY,
+                severity=w.severity,
+                line=w.line,
+                title=w.title,
+                description=w.description,
+                cwe=w.cwe,
+                recommendation=w.recommendation,
+                agent=AGENT_NAME,
+            )
+            for w in response.findings
+        ]
         state.add_findings(findings)
         rag_note = " (RAG-grounded)" if rag_context else ""
         print(f"[security] {len(findings)} finding(s){rag_note}.")

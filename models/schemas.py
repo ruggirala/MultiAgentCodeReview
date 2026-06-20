@@ -58,6 +58,47 @@ class Finding(BaseModel):
     )
 
 
+# --- Wire models for OpenAI Structured Outputs ---------------------------
+#
+# OpenAI's `response_format={"type": "json_schema", strict: True}` enforces
+# the schema server-side, but it has hard constraints that conflict with the
+# richer `Finding` model:
+#
+#   * `additionalProperties: false` is required at every level.
+#   * Every property in `properties` MUST also be listed in `required`.
+#   * Defaults (e.g. `agent="unknown"`) are not allowed.
+#   * Optional types must be expressed as union-with-null in the schema.
+#
+# So we ship a flatter "wire" model the LLM produces, and the agent
+# coerces it into a real `Finding` after the call. This is the contract
+# the model is held to at the API boundary.
+
+
+class FindingWire(BaseModel):
+    """Wire shape the LLM is forced to emit (per-finding)."""
+
+    model_config = {"extra": "forbid"}
+
+    category: Category
+    severity: Severity
+    line: Optional[int]
+    title: str
+    description: str
+    cwe: Optional[str]
+    recommendation: Optional[str]
+
+
+class FindingsResponse(BaseModel):
+    """Top-level wire shape: `{"findings": [...]}`.
+
+    OpenAI Structured Outputs requires a top-level object, not an array.
+    """
+
+    model_config = {"extra": "forbid"}
+
+    findings: list[FindingWire]
+
+
 class CodeChunk(BaseModel):
     """A logical unit of code (function/class/module) produced by the Orchestrator."""
 

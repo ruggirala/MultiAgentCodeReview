@@ -8,9 +8,8 @@ control flow and edge cases, then emit structured `Finding` objects.
 
 from __future__ import annotations
 
-from agents.common import parse_findings_json
-from llm.backend import call_llm
-from models.schemas import Category, ReviewState
+from llm.backend import call_llm_structured
+from models.schemas import Category, Finding, FindingsResponse, ReviewState
 
 AGENT_NAME = "bug_agent"
 
@@ -19,21 +18,18 @@ SYSTEM = (
     "errors by reasoning carefully about edge cases and control flow."
 )
 
+# Note: the JSON shape is enforced server-side via OpenAI Structured Outputs
+# (see call_llm_structured). The prompt no longer needs to describe field
+# names — the schema does that work. We keep the WHAT-to-look-for guidance
+# since that's content, not shape.
 PROMPT = """Find logical BUGS and runtime errors in the Python code below.
 Look for: unhandled edge cases (empty inputs, division by zero), uninitialized
 or missing attributes, resource leaks (files/connections not closed), incorrect
 conditionals, off-by-one errors, bare excepts that swallow errors, and mutable
 default arguments. Do NOT report pure style or security issues here.
 
-First think step by step about how the code could fail. Then return ONLY a JSON
-array (your reasoning must NOT appear outside the array). Each element has:
-  "line": integer line number (approximate, 1-based) or null
-  "severity": one of "Critical", "High", "Medium", "Low"
-  "title": short summary of the bug
-  "description": the failure scenario and why it happens
-  "recommendation": how to fix it
-
-If there are no bugs, return [].
+Set every finding's `category` to "Bug". Severity must be one of Critical,
+High, Medium, Low. If there are no bugs, return an empty findings array.
 
 CODE:
 ```python
@@ -45,8 +41,24 @@ CODE:
 def analyze(state: ReviewState) -> ReviewState:
     """Run bug analysis over the full source and record findings."""
     try:
-        raw = call_llm(PROMPT.format(code=state.source_code), system=SYSTEM)
-        findings = parse_findings_json(raw, AGENT_NAME, Category.BUG)
+        response = call_llm_structured(
+            PROMPT.format(code=state.source_code),
+            FindingsResponse,
+            system=SYSTEM,
+        )
+        findings = [
+            Finding(
+                category=w.category if w.category else Category.BUG,
+                severity=w.severity,
+                line=w.line,
+                title=w.title,
+                description=w.description,
+                cwe=w.cwe,
+                recommendation=w.recommendation,
+                agent=AGENT_NAME,
+            )
+            for w in response.findings
+        ]
         state.add_findings(findings)
         print(f"[bug] {len(findings)} finding(s).")
     except Exception as exc:  # noqa: BLE001

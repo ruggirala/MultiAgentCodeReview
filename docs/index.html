@@ -376,7 +376,7 @@
       <div class="dc-label" data-color="blue">
         <div class="dc-decision">Inter-agent contract</div>
         <div class="dc-pair"><span class="dc-pick">Pydantic state</span><span class="dc-vs">vs</span><span class="dc-alt">free-form text</span></div>
-        <div class="dc-why">Typed routing, no string parsing</div>
+        <div class="dc-why">OpenAI Structured Outputs — schema enforced server-side</div>
       </div>
       <div class="dc-label" data-color="red">
         <div class="dc-decision">Agent execution</div>
@@ -393,7 +393,7 @@
         <span class="dc-pip">LangGraph</span>
       </div>
       <div class="dc-wedge dc-wedge-left" data-color="blue"
-           title="Every agent reads/writes one typed object. A malformed Finding raises at construction, not in downstream parsing confusion. Routing, severity sorting, dashboard rendering all become trivial.">
+           title="The structure is enforced server-side: security and bug agents call OpenAI with response_format={type: json_schema, strict: true}, deriving the schema from a Pydantic model. The API guarantees schema-conformant JSON or a refusal — no parse-and-pray. Inter-agent state is the same typed Pydantic object end-to-end.">
         <span class="dc-num">02</span>
         <span class="dc-pip">Pydantic</span>
       </div>
