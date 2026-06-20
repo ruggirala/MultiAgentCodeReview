@@ -67,6 +67,13 @@ body {
   overflow: hidden;
 }
 
+/* Hide a slide without removing it from the source.
+ * Add data-hidden="true" to a <section class="slide"> to skip it.
+ * The script.js navigation also filters these out, so prev/next + the
+ * counter stay correct. Toggle by editing the attribute — survives pushes.
+ */
+.slide[data-hidden="true"] { display: none; }
+
 .slide + .slide {
   border-top: 1px solid rgba(31, 41, 55, 0.4);
 }

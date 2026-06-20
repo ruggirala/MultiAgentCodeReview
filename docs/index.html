@@ -9,6 +9,22 @@
 </head>
 <body>
 
+<!--
+  ════════════════════════════════════════════════════════════════════
+   How to hide a slide
+  ════════════════════════════════════════════════════════════════════
+  Add  data-hidden="true"  to any <section class="slide"> below.
+  Example:
+      <section class="slide" id="9" data-hidden="true">
+  The slide stays in the source (no work lost) but is removed from:
+    - the rendered page (CSS: display: none)
+    - keyboard / button navigation
+    - the bottom-left counter (denominator updates automatically)
+  Deep links to a hidden slide jump to the next visible slide instead.
+  Remove the attribute to unhide.
+  ════════════════════════════════════════════════════════════════════
+-->
+
 <!-- ============================================================
      Slide 1 — Title
      ============================================================ -->
@@ -365,7 +381,7 @@
       <div class="dc-label" data-color="red">
         <div class="dc-decision">Agent execution</div>
         <div class="dc-pair"><span class="dc-pick">Sequential</span><span class="dc-vs">vs</span><span class="dc-alt">parallel</span></div>
-        <div class="dc-why">Patch+tests dominate the wall-clock anyway</div>
+        <div class="dc-why">One shared <code>ReviewState</code> — no race on <code>findings.extend()</code></div>
       </div>
     </div>
 
@@ -382,7 +398,7 @@
         <span class="dc-pip">Pydantic</span>
       </div>
       <div class="dc-wedge dc-wedge-left" data-color="red"
-           title="Simpler shared-state semantics, natural rate-limit backpressure, and patch+tests at 21s each dominate the pipeline anyway — parallelizing the analysis trio saves only ~6s out of ~90s. Marginal win, real complexity cost.">
+           title="The whole point of ReviewState is shared mutable state. Parallelizing security/bug/style would race on findings.extend() and need either a lock or per-agent staging buffers — extra complexity that breaks the design. Sequential is the natural fit, not a compromise. Bonus: rate-limit backpressure for free.">
         <span class="dc-num">03</span>
         <span class="dc-pip">Sequential</span>
       </div>
@@ -404,7 +420,7 @@
         <span class="dc-pip">JSONL</span>
       </div>
       <div class="dc-wedge dc-wedge-right" data-color="purple"
-           title="GPT-4o for quality on the dev path. CodeLlama-7B (4-bit, BitsAndBytes) means the system runs end-to-end on a Colab T4 with no API key — keyless reproducibility for graders. Selection is one env var (LLM_BACKEND); agents stay backend-agnostic.">
+           title="The hybrid is a cost-vs-quality routing primitive, not just a fallback. Local dev: GPT-4o (best quality). Grading on a Colab T4 with no key: CodeLlama-7B 4-bit. Future production: route trivial diffs to GPT-4o-mini, security-flagged ones to GPT-4o. Agents stay backend-agnostic — selection is one env var (LLM_BACKEND).">
         <span class="dc-num">05</span>
         <span class="dc-pip">Hybrid LLM</span>
       </div>
@@ -424,8 +440,8 @@
       </div>
       <div class="dc-label" data-color="purple">
         <div class="dc-decision">LLM backend</div>
-        <div class="dc-pair"><span class="dc-pick">GPT-4o + CodeLlama</span><span class="dc-vs">vs</span><span class="dc-alt">key-required only</span></div>
-        <div class="dc-why">Keyless reproducibility for graders</div>
+        <div class="dc-pair"><span class="dc-pick">GPT-4o + CodeLlama</span><span class="dc-vs">vs</span><span class="dc-alt">single backend</span></div>
+        <div class="dc-why">Cost-vs-quality knob, flippable per environment</div>
       </div>
       <div class="dc-label" data-color="pink">
         <div class="dc-decision">Load-test corpus</div>
@@ -922,7 +938,7 @@
 </section>
 
 <!-- Bottom-fixed nav and counter -->
-<div class="deck-counter"><b id="counter-current">1</b> / 14 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
+<div class="deck-counter"><b id="counter-current">1</b> / <span id="counter-total">14</span> <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
 <div class="deck-nav">
   <button id="prev-btn">← Prev</button>
   <button id="next-btn">Next →</button>
