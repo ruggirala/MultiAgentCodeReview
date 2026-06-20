@@ -495,17 +495,25 @@ def render_overview() -> None:
         recent = pr_df.sort_values("timestamp_utc", ascending=False).head(8)
         rows: list[str] = []
         cell = "padding:10px 12px;"
+        chip_review = (
+            '<span title="Triage flagged Critical/High security findings — '
+            'human review recommended" '
+            'style="display:inline-block;padding:2px 8px;border-radius:999px;'
+            'background:rgba(251,191,36,0.16);color:#FBBF24;'
+            'font-size:0.72rem;font-weight:600;letter-spacing:0.04em;'
+            'margin-left:8px;">human review</span>'
+        )
         for _, r in recent.iterrows():
             ts = (
                 r["timestamp_utc"].strftime("%Y-%m-%d %H:%M")
                 if pd.notna(r["timestamp_utc"])
                 else ""
             )
-            badge = "🔴" if r.get("needs_human_review") else "🟢"
+            chip = chip_review if r.get("needs_human_review") else ""
             rows.append(
                 f'<tr style="border-top:1px solid var(--border);">'
                 f'<td style="{cell}color:var(--muted);font-family:ui-monospace,monospace;">{ts}</td>'
-                f'<td style="{cell}">{badge} <code>{escape(r["owner"])}/{escape(r["repo"])}#{int(r["pr_number"])}</code></td>'
+                f'<td style="{cell}"><code>{escape(r["owner"])}/{escape(r["repo"])}#{int(r["pr_number"])}</code>{chip}</td>'
                 f'<td style="{cell}color:#F3F4F6;">{escape(str(r["title"])[:80])}</td>'
                 f'<td style="{cell}color:var(--muted);">{int(r["files_reviewed"])}</td>'
                 f'<td style="{cell}color:var(--muted);">{int(r["total_findings"])}</td>'
