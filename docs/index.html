@@ -751,7 +751,6 @@
         <li><b class="green">Measures:</b> recall on bugs we deliberately planted — the agent flagged at least one finding in every expected category.</li>
         <li><b class="amber">Doesn't measure:</b> precision. Each PR also touches real airflow code; surrounding findings (often valid) lack ground truth.</li>
         <li><b class="amber">Granularity:</b> "category caught" not "exact bug caught." Hand-spot-checks confirm 7 / 8 specific bugs were cited by name + CWE.</li>
-        <li><b class="muted">Method:</b> deterministic — re-run <code>python -m eval.score</code> against <code>load_test/status.json</code> for the same number every time.</li>
       </ul>
     </div>
   </div>
@@ -768,7 +767,7 @@
 <section class="slide" id="12">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Case studies</h1>
-  <p class="subtitle">Five concrete bugs the pipeline caught on real PRs to <code>rahulilla/airflow</code> during the load test. Verbatim agent output, full write-ups linked from each card.</p>
+  <p class="subtitle">Five concrete bugs the pipeline caught on real PRs to a forked public airflow repo during the load test. Verbatim agent output, full write-ups linked from each card.</p>
 
   <div class="case-grid">
     <a class="case-card" data-color="red"
@@ -841,9 +840,9 @@
         <span class="case-cat green">Why these matter</span>
       </div>
       <div class="case-summary-body">
-        Two cases triggered the <code>human_review</code> checkpoint.<br>
-        One demonstrates <span class="purple">two agents triangulating</span> on the same function (radon + GPT-4o).<br>
-        All five are drawn from real load-test telemetry, not hand-crafted demos.
+        These are real bugs from the load test, not made-up examples.<br>
+        Two of them set off the human-review flag for being security-critical.<br>
+        One was caught by two different agents at once — a static linter and the LLM — agreeing on the same problem from different angles.
       </div>
     </div>
   </div>
@@ -855,9 +854,8 @@
 <section class="slide" id="13">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What we'd improve next</h1>
-  <p class="subtitle">Three things we measured today, three things we'd want to measure next. Honest gap.</p>
+  <p class="subtitle">Three things we measured today, with the room we'd want to close.</p>
 
-  <h3 class="purple" style="margin: 18px 0 10px; font-size: 0.78rem; letter-spacing: 0.10em; text-transform: uppercase;">Measured today · room to improve</h3>
   <div class="goal-grid">
     <div class="goal-card">
       <div class="goal-label">Speed</div>
@@ -893,21 +891,6 @@
     </div>
   </div>
 
-  <h3 class="amber" style="margin: 26px 0 10px; font-size: 0.78rem; letter-spacing: 0.10em; text-transform: uppercase;">Open questions · we'd want to measure these next</h3>
-  <div class="goal-grid" style="grid-template-columns: repeat(3, 1fr);">
-    <div class="open-card">
-      <div class="goal-label">Did we miss things?</div>
-      <p>We know the pipeline catches the bugs <em>we planted</em>. We don't yet know how often it catches bugs in real-world code that wasn't designed to be caught. Need a labeled real-PR benchmark.</p>
-    </div>
-    <div class="open-card">
-      <div class="goal-label">How noisy are findings?</div>
-      <p>Agents flag 20–30 issues per PR. Some are real, some likely aren't. We never hand-labeled findings, so we don't have a real false-positive rate. A reviewer audit of ~100 findings would give us one.</p>
-    </div>
-    <div class="open-card">
-      <div class="goal-label">Will real teams use it?</div>
-      <p>Today only two repos run this: ours. Packaging the watcher as a one-line GitHub Action would let any team try it without infra. The interesting question is whether they keep it on after a week.</p>
-    </div>
-  </div>
 </section>
 
 <!-- ============================================================
