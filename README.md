@@ -49,6 +49,42 @@ OPENAI_API_KEY=sk-...
 GITHUB_TOKEN=ghp_...        # only needed for PR review / posting comments
 ```
 
+## Quick start
+
+One script starts both the PR watcher and the Streamlit dashboard, with
+clean Ctrl-C teardown for both:
+
+```bash
+# From the repo root:
+./scripts/start.sh                                # watch the airflow fork (default)
+./scripts/start.sh rahulilla/python-simple-webapp # different repo
+./scripts/start.sh rahulilla/airflow --interval 15
+```
+
+The dashboard opens at <http://localhost:8501>. Each child's stdout is
+tee'd to `logs/watcher.log` and `logs/dashboard.log` and printed in this
+terminal with a colored prefix.
+
+### Run from anywhere
+
+Symlink the wrapper into your `$PATH`:
+
+```bash
+ln -s "$(pwd)/scripts/macr-start" ~/.local/bin/macr-start
+```
+
+Now `macr-start` works from any directory:
+
+```bash
+macr-start                                  # finds the project automatically
+macr-start rahulilla/python-simple-webapp
+```
+
+It locates the project by walking up from `$PWD`, then checking
+`$MULTIAGENTCODEREVIEW_DIR`, `~/AI_Training`, and a couple of other
+common spots. Set `MULTIAGENTCODEREVIEW_DIR` if your checkout lives
+elsewhere.
+
 ## Usage
 
 ### Review a local file
@@ -251,6 +287,8 @@ breakdown live in [`eval/README.md`](eval/README.md).
 | `eval/` | Recall scorer over the 30 templates + results |
 | `case_studies/` | Five real bugs with verbatim agent output |
 | `docs/` | GitHub Pages slide deck (HTML/CSS/JS) |
+| `scripts/start.sh` | One-command launcher for watcher + dashboard |
+| `scripts/macr-start` | Portable wrapper — run from any directory |
 | `build_notebook.py` | Generates the Colab notebook |
 
 ## Status

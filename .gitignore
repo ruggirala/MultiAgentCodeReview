@@ -19,6 +19,9 @@ runs/
 # Load-test run artifacts
 load_test/status.json
 
+# Per-run logs from scripts/start.sh
+logs/
+
 # Python
 __pycache__/
 *.py[cod]

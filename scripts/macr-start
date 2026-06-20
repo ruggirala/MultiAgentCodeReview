@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# macr-start — portable wrapper for scripts/start.sh.
+#
+# Drop this on your $PATH (e.g. symlink into ~/.local/bin) and you can run
+# the watcher + dashboard from anywhere:
+#
+#     macr-start                              # default repo
+#     macr-start rahulilla/python-simple-webapp
+#     MULTIAGENTCODEREVIEW_DIR=/path/to/repo macr-start
+#
+# The wrapper finds the project by:
+#   1. $MULTIAGENTCODEREVIEW_DIR if set
+#   2. walking up from $PWD looking for scripts/start.sh + .venv/
+#   3. ~/AI_Training (the canonical local checkout location)
+#   4. ~/code/MultiAgentCodeReview
+#   5. ~/MultiAgentCodeReview
+# First match wins. If nothing matches, prints an error with how to fix it.
+
+set -euo pipefail
+
+is_repo() {
+    [[ -d "$1" && -x "$1/scripts/start.sh" && -d "$1/.venv" ]]
+}
+
+find_repo() {
+    if [[ -n "${MULTIAGENTCODEREVIEW_DIR:-}" ]] && is_repo "${MULTIAGENTCODEREVIEW_DIR}"; then
+        printf '%s' "${MULTIAGENTCODEREVIEW_DIR}"
+        return 0
+    fi
+    # Walk up from $PWD
+    local dir; dir="$(pwd -P)"
+    while [[ "${dir}" != "/" ]]; do
+        if is_repo "${dir}"; then
+            printf '%s' "${dir}"
+            return 0
+        fi
+        dir="$(dirname "${dir}")"
+    done
+    # Common locations
+    for candidate in "${HOME}/AI_Training" "${HOME}/code/MultiAgentCodeReview" "${HOME}/MultiAgentCodeReview"; do
+        if is_repo "${candidate}"; then
+            printf '%s' "${candidate}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+if ! REPO="$(find_repo)"; then
+    cat >&2 <<EOF
+ERROR: Could not find the MultiAgentCodeReview project directory.
+
+Looked in (in order):
+  - \$MULTIAGENTCODEREVIEW_DIR  (currently: ${MULTIAGENTCODEREVIEW_DIR:-unset})
+  - parent directories of \$PWD
+  - ~/AI_Training
+  - ~/code/MultiAgentCodeReview
+  - ~/MultiAgentCodeReview
+
+A directory matches when it has both scripts/start.sh and .venv/.
+
+To fix, either:
+  1. cd into the project and re-run, OR
+  2. export MULTIAGENTCODEREVIEW_DIR=/path/to/MultiAgentCodeReview
+EOF
+    exit 1
+fi
+
+exec "${REPO}/scripts/start.sh" "$@"
