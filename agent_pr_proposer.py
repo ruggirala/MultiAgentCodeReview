@@ -422,16 +422,16 @@ def _build_followup_pr_body(
         if r.state.tests and r.state.tests.test_code
     ]
 
-    if outcome.workflow_conclusion == "skipped":
-        ci_block = (
-            "**CI status:** ⚙️ skipped — repo has no `workflow_dispatch` "
-            "workflow configured (`SKIP_CI_GATE=1`)."
-        )
-    else:
+    # When SKIP_CI_GATE=1 is in use the repo has no dispatchable workflow,
+    # so a "CI status" line is just noise. Show the line only when CI
+    # actually ran and reported a result.
+    if outcome.workflow_conclusion and outcome.workflow_conclusion != "skipped":
         ci_block = (
             f"**CI status (verified before opening this PR):** "
             f"✅ green — [{outcome.workflow_conclusion}]({outcome.workflow_run_url})"
         )
+    else:
+        ci_block = ""
 
     tests_block = ""
     if test_lines:
@@ -452,8 +452,8 @@ def _build_followup_pr_body(
         f"**Files changed by the agent:**\n" + "\n".join(fix_lines) + "\n\n"
         + tests_block
         + ("\n\n" if tests_block else "")
-        + ci_block
-        + f"\n\nThis PR targets `{user_branch}` (the original PR's branch). "
+        + (ci_block + "\n\n" if ci_block else "")
+        + f"This PR targets `{user_branch}` (the original PR's branch). "
         f"Merging it applies the agent's suggestions to that branch; the "
         f"original PR can then be reviewed and merged as usual.\n\n"
         f"<sub>Automated proposal — review the diff before merging.</sub>"
