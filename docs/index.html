@@ -347,70 +347,92 @@
 <section class="slide" id="6">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Design choices</h1>
-  <p class="subtitle">Six pivot points where we picked a path. What we chose, what we chose <em>against</em>, and why.</p>
+  <p class="subtitle">Six pivot points where we picked a path. <span class="muted">Hover any wedge for the full reasoning.</span></p>
 
-  <div class="design-grid">
-
-    <div class="design-card">
-      <div class="design-decision">Orchestration</div>
-      <div class="design-row">
-        <span class="design-pick"><b class="green">LangGraph</b></span>
-        <span class="design-vs">over</span>
-        <span class="design-alt">raw LangChain chains</span>
+  <div class="dc-stage">
+    <!-- Left column text -->
+    <div class="dc-text dc-text-left">
+      <div class="dc-label" data-color="green">
+        <div class="dc-decision">Orchestration</div>
+        <div class="dc-pair"><span class="dc-pick">LangGraph</span><span class="dc-vs">vs</span><span class="dc-alt">LangChain chains</span></div>
+        <div class="dc-why">Conditional edges &gt; chained calls</div>
       </div>
-      <p>Explicit conditional edges &gt; chained agents. Triage routes Critical/High security findings through a <code>human_review</code> node by deterministic Python over the typed findings list — no LLM judgment, no string parsing. The node is a stable hook for adding a real interrupt later.</p>
+      <div class="dc-label" data-color="blue">
+        <div class="dc-decision">Inter-agent contract</div>
+        <div class="dc-pair"><span class="dc-pick">Pydantic state</span><span class="dc-vs">vs</span><span class="dc-alt">free-form text</span></div>
+        <div class="dc-why">Typed routing, no string parsing</div>
+      </div>
+      <div class="dc-label" data-color="red">
+        <div class="dc-decision">Agent execution</div>
+        <div class="dc-pair"><span class="dc-pick">Sequential</span><span class="dc-vs">vs</span><span class="dc-alt">parallel</span></div>
+        <div class="dc-why">Patch+tests dominate the wall-clock anyway</div>
+      </div>
     </div>
 
-    <div class="design-card">
-      <div class="design-decision">Inter-agent contract</div>
-      <div class="design-row">
-        <span class="design-pick"><b class="green">Pydantic <code>ReviewState</code></b></span>
-        <span class="design-vs">over</span>
-        <span class="design-alt">free-form text between agents</span>
+    <!-- Left wedges -->
+    <div class="dc-wedges dc-wedges-left">
+      <div class="dc-wedge dc-wedge-left" data-color="green"
+           title="Explicit conditional edges > chained agents. Triage routes Critical/High security findings through a human_review node by deterministic Python over the typed findings list — no LLM judgment, no string parsing.">
+        <span class="dc-num">01</span>
+        <span class="dc-pip">LangGraph</span>
       </div>
-      <p>Every agent reads/writes one typed object. A malformed <code>Finding</code> raises at construction, not in downstream parsing confusion. Routing, severity sorting, dashboard rendering all become trivial — every consumer iterates the same typed list.</p>
+      <div class="dc-wedge dc-wedge-left" data-color="blue"
+           title="Every agent reads/writes one typed object. A malformed Finding raises at construction, not in downstream parsing confusion. Routing, severity sorting, dashboard rendering all become trivial.">
+        <span class="dc-num">02</span>
+        <span class="dc-pip">Pydantic</span>
+      </div>
+      <div class="dc-wedge dc-wedge-left" data-color="red"
+           title="Simpler shared-state semantics, natural rate-limit backpressure, and patch+tests at 21s each dominate the pipeline anyway — parallelizing the analysis trio saves only ~6s out of ~90s. Marginal win, real complexity cost.">
+        <span class="dc-num">03</span>
+        <span class="dc-pip">Sequential</span>
+      </div>
     </div>
 
-    <div class="design-card">
-      <div class="design-decision">Agent execution</div>
-      <div class="design-row">
-        <span class="design-pick"><b class="green">Sequential</b></span>
-        <span class="design-vs">over</span>
-        <span class="design-alt">parallel security/bug/style</span>
+    <!-- Center brand mark -->
+    <div class="dc-center">
+      <div class="dc-orb">
+        <div class="dc-orb-inner">🤖</div>
       </div>
-      <p>Simpler shared-state semantics (no race on <code>findings.extend()</code>), natural rate-limit backpressure, and patch+tests at 21s each dominate the pipeline anyway — parallelizing the analysis trio saves only ~6s out of ~90s. Marginal win, real complexity cost.</p>
+      <div class="dc-center-label">Multi-agent<br>code review</div>
     </div>
 
-    <div class="design-card">
-      <div class="design-decision">Telemetry store</div>
-      <div class="design-row">
-        <span class="design-pick"><b class="green">JSONL append-only</b></span>
-        <span class="design-vs">over</span>
-        <span class="design-alt">SQLite or Postgres</span>
+    <!-- Right wedges -->
+    <div class="dc-wedges dc-wedges-right">
+      <div class="dc-wedge dc-wedge-right" data-color="amber"
+           title="No DB to operate, crash-safe (partial writes truncate at the last newline), trivially tailable from Streamlit's cache_data(ttl=10). Easy to migrate to DuckDB later via read_json(). The cost: full-file reread becomes expensive at ~1M events — not our problem yet.">
+        <span class="dc-num">04</span>
+        <span class="dc-pip">JSONL</span>
       </div>
-      <p>No DB to operate, crash-safe (partial writes truncate at the last newline), trivially tailable from Streamlit's <code>cache_data(ttl=10)</code>. Easy to migrate to DuckDB later via <code>read_json()</code>. The cost: full-file reread becomes expensive at ~1M events — not our problem yet.</p>
+      <div class="dc-wedge dc-wedge-right" data-color="purple"
+           title="GPT-4o for quality on the dev path. CodeLlama-7B (4-bit, BitsAndBytes) means the system runs end-to-end on a Colab T4 with no API key — keyless reproducibility for graders. Selection is one env var (LLM_BACKEND); agents stay backend-agnostic.">
+        <span class="dc-num">05</span>
+        <span class="dc-pip">Hybrid LLM</span>
+      </div>
+      <div class="dc-wedge dc-wedge-right" data-color="pink"
+           title="Deterministic — same templates run today produce the same load test next week. No extra token cost. Each template declares expected_findings, which the recall scorer in eval/ uses to grade the pipeline.">
+        <span class="dc-num">06</span>
+        <span class="dc-pip">Hand-curated</span>
+      </div>
     </div>
 
-    <div class="design-card">
-      <div class="design-decision">LLM backend</div>
-      <div class="design-row">
-        <span class="design-pick"><b class="green">GPT-4o + CodeLlama-7B</b></span>
-        <span class="design-vs">over</span>
-        <span class="design-alt">single backend, key-required</span>
+    <!-- Right column text -->
+    <div class="dc-text dc-text-right">
+      <div class="dc-label" data-color="amber">
+        <div class="dc-decision">Telemetry store</div>
+        <div class="dc-pair"><span class="dc-pick">JSONL</span><span class="dc-vs">vs</span><span class="dc-alt">SQLite / Postgres</span></div>
+        <div class="dc-why">No DB to operate, crash-safe</div>
       </div>
-      <p>GPT-4o for quality on the dev path. CodeLlama-7B (4-bit, BitsAndBytes) means the system runs end-to-end on a Colab T4 with no API key — <em>keyless reproducibility</em> for graders. Selection is one env var (<code>LLM_BACKEND</code>); agents stay backend-agnostic.</p>
-    </div>
-
-    <div class="design-card">
-      <div class="design-decision">Load-test corpus</div>
-      <div class="design-row">
-        <span class="design-pick"><b class="green">30 hand-curated templates</b></span>
-        <span class="design-vs">over</span>
-        <span class="design-alt">LLM-generated buggy code</span>
+      <div class="dc-label" data-color="purple">
+        <div class="dc-decision">LLM backend</div>
+        <div class="dc-pair"><span class="dc-pick">GPT-4o + CodeLlama</span><span class="dc-vs">vs</span><span class="dc-alt">key-required only</span></div>
+        <div class="dc-why">Keyless reproducibility for graders</div>
       </div>
-      <p>Deterministic — same templates run today produce the same load test next week. No extra token cost. Each template declares <code>expected_findings</code>, which the recall scorer in <code>eval/</code> uses to grade the pipeline. LLM-generated bugs would have been more varied but cost-tied to runs and harder to defend.</p>
+      <div class="dc-label" data-color="pink">
+        <div class="dc-decision">Load-test corpus</div>
+        <div class="dc-pair"><span class="dc-pick">30 hand-curated</span><span class="dc-vs">vs</span><span class="dc-alt">LLM-generated</span></div>
+        <div class="dc-why">Deterministic, recall-gradable</div>
+      </div>
     </div>
-
   </div>
 </section>
 
