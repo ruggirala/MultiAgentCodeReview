@@ -19,14 +19,15 @@
     3: 'System architecture',
     4: 'Pipeline flow',
     5: 'Under the hood',
-    6: 'RAG layer',
-    7: 'What the agent posts',
-    8: 'Telemetry & dashboard',
-    9: 'Load-test results',
-    10: 'Evaluation',
-    11: 'Case studies',
-    12: 'Goals',
-    13: 'Thank you',
+    6: 'Design choices',
+    7: 'RAG layer',
+    8: 'What the agent posts',
+    9: 'Telemetry & dashboard',
+    10: 'Load-test results',
+    11: 'Evaluation',
+    12: 'Case studies',
+    13: 'Goals',
+    14: 'Thank you',
   };
 
   function currentSlideIndex() {

@@ -336,26 +336,88 @@
     </div>
   </div>
 
-  <div class="cols three" style="margin-top: 22px; gap: 16px;">
-    <div class="problem-card" style="padding: 16px 18px;">
-      <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why LangGraph</h3>
-      <p style="font-size: 0.86rem; line-height: 1.5;">Critical/High findings route through a <code>human_review</code> node. It's a stub today (logs and continues), but the routing decision is deterministic Python over typed findings, so it's a stable hook for adding a real pause later.</p>
+  <p class="muted" style="margin-top: 18px; font-size: 0.86rem; text-align: center;">
+    Why we picked each of these, and what we chose <em>against</em>, on the next slide.
+  </p>
+</section>
+
+<!-- ============================================================
+     Slide 6 — Design choices
+     ============================================================ -->
+<section class="slide" id="6">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">Design choices</h1>
+  <p class="subtitle">Six pivot points where we picked a path. What we chose, what we chose <em>against</em>, and why.</p>
+
+  <div class="design-grid">
+
+    <div class="design-card">
+      <div class="design-decision">Orchestration</div>
+      <div class="design-row">
+        <span class="design-pick"><b class="green">LangGraph</b></span>
+        <span class="design-vs">over</span>
+        <span class="design-alt">raw LangChain chains</span>
+      </div>
+      <p>Explicit conditional edges &gt; chained agents. Triage routes Critical/High security findings through a <code>human_review</code> node by deterministic Python over the typed findings list — no LLM judgment, no string parsing. The node is a stable hook for adding a real interrupt later.</p>
     </div>
-    <div class="problem-card" style="padding: 16px 18px;">
-      <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why JSONL telemetry</h3>
-      <p style="font-size: 0.86rem; line-height: 1.5;">Append-only file is the simplest crash-safe store. No DB to operate. Streamlit tails it directly. Easy to migrate to DuckDB later if it grows.</p>
+
+    <div class="design-card">
+      <div class="design-decision">Inter-agent contract</div>
+      <div class="design-row">
+        <span class="design-pick"><b class="green">Pydantic <code>ReviewState</code></b></span>
+        <span class="design-vs">over</span>
+        <span class="design-alt">free-form text between agents</span>
+      </div>
+      <p>Every agent reads/writes one typed object. A malformed <code>Finding</code> raises at construction, not in downstream parsing confusion. Routing, severity sorting, dashboard rendering all become trivial — every consumer iterates the same typed list.</p>
     </div>
-    <div class="problem-card" style="padding: 16px 18px;">
-      <h3 class="green" style="font-size: 0.92rem; margin-bottom: 6px;">Why hybrid LLM</h3>
-      <p style="font-size: 0.86rem; line-height: 1.5;">GPT-4o for quality on the dev path. CodeLlama-7B (4-bit) means the system runs end-to-end on a Colab T4 with no API key — keyless reproducibility for graders.</p>
+
+    <div class="design-card">
+      <div class="design-decision">Agent execution</div>
+      <div class="design-row">
+        <span class="design-pick"><b class="green">Sequential</b></span>
+        <span class="design-vs">over</span>
+        <span class="design-alt">parallel security/bug/style</span>
+      </div>
+      <p>Simpler shared-state semantics (no race on <code>findings.extend()</code>), natural rate-limit backpressure, and patch+tests at 21s each dominate the pipeline anyway — parallelizing the analysis trio saves only ~6s out of ~90s. Marginal win, real complexity cost.</p>
     </div>
+
+    <div class="design-card">
+      <div class="design-decision">Telemetry store</div>
+      <div class="design-row">
+        <span class="design-pick"><b class="green">JSONL append-only</b></span>
+        <span class="design-vs">over</span>
+        <span class="design-alt">SQLite or Postgres</span>
+      </div>
+      <p>No DB to operate, crash-safe (partial writes truncate at the last newline), trivially tailable from Streamlit's <code>cache_data(ttl=10)</code>. Easy to migrate to DuckDB later via <code>read_json()</code>. The cost: full-file reread becomes expensive at ~1M events — not our problem yet.</p>
+    </div>
+
+    <div class="design-card">
+      <div class="design-decision">LLM backend</div>
+      <div class="design-row">
+        <span class="design-pick"><b class="green">GPT-4o + CodeLlama-7B</b></span>
+        <span class="design-vs">over</span>
+        <span class="design-alt">single backend, key-required</span>
+      </div>
+      <p>GPT-4o for quality on the dev path. CodeLlama-7B (4-bit, BitsAndBytes) means the system runs end-to-end on a Colab T4 with no API key — <em>keyless reproducibility</em> for graders. Selection is one env var (<code>LLM_BACKEND</code>); agents stay backend-agnostic.</p>
+    </div>
+
+    <div class="design-card">
+      <div class="design-decision">Load-test corpus</div>
+      <div class="design-row">
+        <span class="design-pick"><b class="green">30 hand-curated templates</b></span>
+        <span class="design-vs">over</span>
+        <span class="design-alt">LLM-generated buggy code</span>
+      </div>
+      <p>Deterministic — same templates run today produce the same load test next week. No extra token cost. Each template declares <code>expected_findings</code>, which the recall scorer in <code>eval/</code> uses to grade the pipeline. LLM-generated bugs would have been more varied but cost-tied to runs and harder to defend.</p>
+    </div>
+
   </div>
 </section>
 
 <!-- ============================================================
-     Slide 6 — RAG layer
+     Slide 7 — RAG layer
      ============================================================ -->
-<section class="slide" id="6">
+<section class="slide" id="7">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Grounded with RAG</h1>
   <p class="subtitle">Findings cite specific CWEs and OWASP categories instead of hallucinating. Toggle with <code>USE_RAG=1</code>.</p>
@@ -401,9 +463,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 7 — What the agent posts
+     Slide 8 — What the agent posts
      ============================================================ -->
-<section class="slide" id="7">
+<section class="slide" id="8">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What the agent posts</h1>
   <p class="subtitle">Every PR gets a structured review comment with a per-file severity table, every finding spelled out with location + CWE + suggested fix.</p>
@@ -469,9 +531,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 8 — Telemetry + dashboard
+     Slide 9 — Telemetry + dashboard
      ============================================================ -->
-<section class="slide" id="8">
+<section class="slide" id="9">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Telemetry &amp; dashboard</h1>
   <p class="subtitle">Every run emits structured events — a Streamlit app tails them in real time.</p>
@@ -498,9 +560,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 9 — Load test results
+     Slide 10 — Load test results
      ============================================================ -->
-<section class="slide" id="9">
+<section class="slide" id="10">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Load-tested in production conditions</h1>
   <p class="subtitle">30 deliberately-buggy PRs opened sequentially against the airflow fork. Watcher live, dashboard recording every event.</p>
@@ -580,9 +642,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 10 — Evaluation
+     Slide 11 — Evaluation
      ============================================================ -->
-<section class="slide" id="10">
+<section class="slide" id="11">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Evaluation — recall on planted bugs</h1>
   <p class="subtitle">Each load-test template plants a bug we know the category of. Did the pipeline catch every planted category? <span class="green">100% — 30/30.</span></p>
@@ -663,9 +725,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 11 — Case studies
+     Slide 12 — Case studies
      ============================================================ -->
-<section class="slide" id="11">
+<section class="slide" id="12">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Case studies</h1>
   <p class="subtitle">Five concrete bugs the pipeline caught on real PRs to <code>rahulilla/airflow</code> during the load test. Verbatim agent output, full write-ups linked from each card.</p>
@@ -750,9 +812,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 12 — Goals
+     Slide 13 — Goals
      ============================================================ -->
-<section class="slide" id="12">
+<section class="slide" id="13">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What success looks like</h1>
   <p class="subtitle">Specific, measurable goals — not just "more features." Today's numbers in <span class="purple">purple</span>; targets we're chasing in <span class="green">green</span>.</p>
@@ -827,9 +889,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 13 — Q&A / Links
+     Slide 14 — Q&A / Links
      ============================================================ -->
-<section class="slide" id="13">
+<section class="slide" id="14">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
 
   <h1 class="title-hero" style="font-size: 4.5rem; margin-bottom: 8px;">Thank you.</h1>
@@ -838,7 +900,7 @@
 </section>
 
 <!-- Bottom-fixed nav and counter -->
-<div class="deck-counter"><b id="counter-current">1</b> / 13 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
+<div class="deck-counter"><b id="counter-current">1</b> / 14 <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
 <div class="deck-nav">
   <button id="prev-btn">← Prev</button>
   <button id="next-btn">Next →</button>

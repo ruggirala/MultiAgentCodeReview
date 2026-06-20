@@ -571,6 +571,67 @@ code, .mono {
 }
 .tech-pill span { color: var(--muted); font-size: 0.78rem; }
 
+/* Design-choice cards (slide 6) — 3x2 grid */
+.design-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 22px;
+}
+.design-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+.design-card:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(167,139,250,0.06), rgba(96,165,250,0.02));
+  border-color: rgba(167,139,250,0.35);
+}
+.design-decision {
+  font-size: 0.7rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+.design-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+.design-row .design-pick { font-weight: 600; }
+.design-row .design-pick b { font-size: 1rem; letter-spacing: -0.01em; }
+.design-row .design-vs {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.78rem;
+}
+.design-row .design-alt {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(248,113,113,0.4);
+  text-decoration-thickness: 1.5px;
+  font-size: 0.86rem;
+}
+.design-card p {
+  color: var(--text);
+  font-size: 0.83rem;
+  line-height: 1.55;
+  margin: 0;
+}
+@media (max-width: 1100px) { .design-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px)  { .design-grid { grid-template-columns: 1fr; } }
+
 /* Logo pills (slide 5) — public Simple Icons via cdn.simpleicons.org */
 .logo-grid {
   display: grid;
