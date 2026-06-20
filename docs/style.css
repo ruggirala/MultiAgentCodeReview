@@ -1291,6 +1291,26 @@ pre.code .v  { color: var(--accent-2); }
 @media (max-width: 1100px) { .goal-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 720px)  { .goal-grid { grid-template-columns: 1fr; } }
 
+/* Open-question cards — same surface as goal-card but without the metric arrow + bar.
+ * Border-left tinted amber to distinguish from the measured-today cards above. */
+.open-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-5);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.open-card .goal-label {
+  color: var(--accent-5);
+  margin-bottom: 6px;
+}
+.open-card p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
 /* ----------------------------------------------------------- *
  *  Q&A buttons (slide 10)
  * ----------------------------------------------------------- */

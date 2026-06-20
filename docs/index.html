@@ -854,74 +854,58 @@
      ============================================================ -->
 <section class="slide" id="13">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
-  <h1 class="section-title">What success looks like</h1>
-  <p class="subtitle">Specific, measurable goals — not just "more features." Today's numbers in <span class="purple">purple</span>; targets we're chasing in <span class="green">green</span>.</p>
+  <h1 class="section-title">What we'd improve next</h1>
+  <p class="subtitle">Three things we measured today, three things we'd want to measure next. Honest gap.</p>
 
+  <h3 class="purple" style="margin: 18px 0 10px; font-size: 0.78rem; letter-spacing: 0.10em; text-transform: uppercase;">Measured today · room to improve</h3>
   <div class="goal-grid">
     <div class="goal-card">
-      <div class="goal-label">Review latency p95</div>
+      <div class="goal-label">Speed</div>
       <div class="goal-row">
         <span class="goal-now">93s <span class="goal-tag">today</span></span>
         <span class="goal-arrow">→</span>
         <span class="goal-target">&lt; 30s</span>
       </div>
       <div class="goal-bar"><span style="width: 32%;"></span></div>
-      <p>Drop median LLM latency by parallelizing security/bug/style nodes and switching analysis-only to a faster model.</p>
+      <p>Today, the slowest review in our 30-PR test took just over a minute and a half. Most of that is the patch and tests agents waiting on GPT-4o. Run the analysis agents at the same time instead of one-after-another, and use a faster (cheaper) model for the lighter passes — that's the path to under 30 seconds.</p>
     </div>
 
     <div class="goal-card">
-      <div class="goal-label">OWASP Top-10 catch rate</div>
-      <div class="goal-row">
-        <span class="goal-now">~85% <span class="goal-tag">today</span></span>
-        <span class="goal-arrow">→</span>
-        <span class="goal-target">&gt; 95%</span>
-      </div>
-      <div class="goal-bar"><span style="width: 85%;"></span></div>
-      <p>Expand the RAG corpus with worked examples per CWE; add a benchmarking PR set covering all 10 OWASP categories.</p>
-    </div>
-
-    <div class="goal-card">
-      <div class="goal-label">False-positive rate</div>
-      <div class="goal-row">
-        <span class="goal-now">est. 12% <span class="goal-tag">today</span></span>
-        <span class="goal-arrow">→</span>
-        <span class="goal-target">&lt; 5%</span>
-      </div>
-      <div class="goal-bar"><span style="width: 25%;"></span></div>
-      <p>Add a confirmation pass that re-reads the code before posting High/Critical findings; reject ones that don't survive a second look.</p>
-    </div>
-
-    <div class="goal-card">
-      <div class="goal-label">Languages supported</div>
+      <div class="goal-label">Languages</div>
       <div class="goal-row">
         <span class="goal-now">1 <span class="goal-tag">Python</span></span>
         <span class="goal-arrow">→</span>
         <span class="goal-target">3+</span>
       </div>
       <div class="goal-bar"><span style="width: 33%;"></span></div>
-      <p>tree-sitter already supports Java/JS/Go grammars. Bug + style agents need lang-aware prompts; security agent stays largely portable.</p>
+      <p>Today the agents only read Python. The parser we use already understands Java, JavaScript, and Go — what's missing is teaching the bug and style prompts about each language. Security findings are mostly the same across languages, so that agent can extend almost as-is.</p>
     </div>
 
     <div class="goal-card">
-      <div class="goal-label">Cost per PR review</div>
+      <div class="goal-label">Cost per PR</div>
       <div class="goal-row">
         <span class="goal-now">~$0.14 <span class="goal-tag">GPT-4o</span></span>
         <span class="goal-arrow">→</span>
         <span class="goal-target">&lt; $0.05</span>
       </div>
       <div class="goal-bar"><span style="width: 36%;"></span></div>
-      <p>Route trivial diffs to GPT-4o-mini; reserve GPT-4o for high-severity nodes. Cache common boilerplate prompts.</p>
+      <p>Today, each PR costs about 14 cents in OpenAI tokens. Most of that goes to fully reviewing every file with the most expensive model. Route simple, low-risk diffs to the cheaper GPT-4o-mini and only reach for GPT-4o when something looks risky — that gets us under 5 cents.</p>
     </div>
+  </div>
 
-    <div class="goal-card">
-      <div class="goal-label">Reach</div>
-      <div class="goal-row">
-        <span class="goal-now">2 repos <span class="goal-tag">forks</span></span>
-        <span class="goal-arrow">→</span>
-        <span class="goal-target">100+ repos</span>
-      </div>
-      <div class="goal-bar"><span style="width: 2%;"></span></div>
-      <p>Package the watcher as a one-line GitHub Action so any team can drop it in. Self-serve install, no infra to run.</p>
+  <h3 class="amber" style="margin: 26px 0 10px; font-size: 0.78rem; letter-spacing: 0.10em; text-transform: uppercase;">Open questions · we'd want to measure these next</h3>
+  <div class="goal-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="open-card">
+      <div class="goal-label">Did we miss things?</div>
+      <p>We know the pipeline catches the bugs <em>we planted</em>. We don't yet know how often it catches bugs in real-world code that wasn't designed to be caught. Need a labeled real-PR benchmark.</p>
+    </div>
+    <div class="open-card">
+      <div class="goal-label">How noisy are findings?</div>
+      <p>Agents flag 20–30 issues per PR. Some are real, some likely aren't. We never hand-labeled findings, so we don't have a real false-positive rate. A reviewer audit of ~100 findings would give us one.</p>
+    </div>
+    <div class="open-card">
+      <div class="goal-label">Will real teams use it?</div>
+      <p>Today only two repos run this: ours. Packaging the watcher as a one-line GitHub Action would let any team try it without infra. The interesting question is whether they keep it on after a week.</p>
     </div>
   </div>
 </section>
