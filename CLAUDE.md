@@ -4,6 +4,10 @@ This file is loaded automatically by Claude Code when running `claude .` in this
 repo. It captures the project's current architecture, conventions, and the
 decisions a contributor needs to know on day one.
 
+> **For deeper context** (design decisions, telemetry shapes, env-knob
+> distinctions, known open questions): see [`docs/CONTEXT.md`](docs/CONTEXT.md).
+> Claude Code follows linked references so it gets loaded into context too.
+
 ## What this is
 
 A LangGraph state machine of seven AI agents that reviews Python code for
