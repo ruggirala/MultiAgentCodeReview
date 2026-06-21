@@ -48,6 +48,27 @@ _dark.layout.colorway = [
 ]
 pio.templates.default = "plotly_dark"
 
+# --- pricing config ---------------------------------------------------
+# OpenAI list prices in USD per 1M tokens. Updated from the OpenAI pricing
+# page; tweak here if a tier changes. Models we don't recognize cost zero
+# (the CodeLlama keyless backend has no API charges).
+MODEL_PRICING_PER_MTOK = {
+    "gpt-4o":      {"input":  5.00, "output": 20.00},
+    "gpt-4o-mini": {"input":  0.15, "output":  0.60},
+    "gpt-4-turbo": {"input": 10.00, "output": 30.00},
+    "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
+}
+
+def _cost_for_row(model: str, prompt_tok: float, completion_tok: float) -> float:
+    """Per-call cost in USD. Returns 0.0 for unknown models (e.g. CodeLlama)."""
+    rates = MODEL_PRICING_PER_MTOK.get(model)
+    if not rates:
+        return 0.0
+    pin = (prompt_tok or 0) / 1_000_000.0 * rates["input"]
+    pout = (completion_tok or 0) / 1_000_000.0 * rates["output"]
+    return pin + pout
+
+
 # --- data load ---------------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -695,18 +716,36 @@ def render_llm() -> None:
     )
     p95 = float(success["duration_sec"].quantile(0.95)) if not success.empty else 0.0
 
-    sorted_calls = llm_df.sort_values("timestamp_utc")
+    # Per-call cost (vectorized) and aggregates.
+    if "model" in llm_df.columns:
+        llm_df_local = llm_df.copy()
+        llm_df_local["cost_usd"] = llm_df_local.apply(
+            lambda r: _cost_for_row(
+                r.get("model", ""),
+                r.get("prompt_tokens", 0),
+                r.get("completion_tokens", 0),
+            ),
+            axis=1,
+        )
+        total_cost = float(llm_df_local["cost_usd"].sum())
+    else:
+        llm_df_local = llm_df.assign(cost_usd=0.0)
+        total_cost = 0.0
+
+    sorted_calls = llm_df_local.sort_values("timestamp_utc")
     spark_calls = list(range(1, len(sorted_calls) + 1))
     spark_tokens = sorted_calls["total_tokens"].fillna(0).cumsum().tolist()
     spark_lat = sorted_calls["duration_sec"].tolist()
+    spark_cost = sorted_calls["cost_usd"].fillna(0.0).cumsum().tolist()
 
     cards = [
         ("LLM calls", f"{total_calls}", spark_calls, "#A78BFA"),
         ("Total tokens", f"{total_tokens:,}", spark_tokens, "#34D399"),
+        ("Total cost", f"${total_cost:,.2f}", spark_cost, "#FBBF24"),
         ("Retry rate", f"{retry_rate:.1f}%", spark_lat, "#F87171"),
         ("p95 latency", f"{p95:.2f}s", spark_lat, "#60A5FA"),
     ]
-    cols = st.columns(4, gap="medium")
+    cols = st.columns(5, gap="medium")
     for col, (label, value, series, color) in zip(cols, cards):
         col.markdown(
             kpi_card(label, value, series, color=color, grad_id=f"l_{label.replace(' ', '_')}"),
@@ -742,6 +781,76 @@ def render_llm() -> None:
         err_counts = errs["error"].astype(str).value_counts().head(10).reset_index()
         err_counts.columns = ["error", "count"]
         st.dataframe(err_counts, use_container_width=True, hide_index=True)
+
+    # ---- Cost per PR -------------------------------------------------
+    if not pr_df.empty and "run_id" in llm_df_local.columns:
+        section_heading("Cost per PR", "GPT-4o list pricing · CodeLlama runs cost $0")
+
+        # Aggregate llm calls by run_id
+        per_run = (
+            llm_df_local.dropna(subset=["run_id"])
+            .groupby("run_id")
+            .agg(
+                prompt_tokens=("prompt_tokens", "sum"),
+                completion_tokens=("completion_tokens", "sum"),
+                total_tokens=("total_tokens", "sum"),
+                llm_calls=("run_id", "size"),
+                cost_usd=("cost_usd", "sum"),
+            )
+            .reset_index()
+        )
+
+        # Join PR metadata (run_id -> owner/repo/pr_number/title/duration)
+        pr_meta = pr_df[
+            [c for c in ["run_id", "owner", "repo", "pr_number", "title", "duration_sec", "total_findings"] if c in pr_df.columns]
+        ].copy()
+        joined = per_run.merge(pr_meta, on="run_id", how="left")
+        joined["pr"] = joined.apply(
+            lambda r: (
+                f"{r['owner']}/{r['repo']}#{int(r['pr_number'])}"
+                if pd.notna(r.get("owner")) else "(no PR)"
+            ),
+            axis=1,
+        )
+        joined = joined.sort_values("cost_usd", ascending=False)
+
+        # KPI row: avg + max cost, only counting joined rows (have a PR)
+        with_pr = joined[joined["pr"] != "(no PR)"]
+        if not with_pr.empty:
+            avg_cost = float(with_pr["cost_usd"].mean())
+            max_cost = float(with_pr["cost_usd"].max())
+            min_cost = float(with_pr["cost_usd"].min())
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Avg cost / PR", f"${avg_cost:.4f}")
+            c2.metric("Max cost / PR", f"${max_cost:.4f}")
+            c3.metric("Min cost / PR", f"${min_cost:.4f}")
+
+        # Histogram of cost-per-PR distribution
+        if len(with_pr) > 1:
+            hist = px.histogram(
+                with_pr,
+                x="cost_usd",
+                nbins=min(20, len(with_pr)),
+                labels={"cost_usd": "USD per PR"},
+            )
+            hist.update_traces(marker_color="#FBBF24")
+            hist.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=240, bargap=0.05)
+            st.plotly_chart(hist, use_container_width=True)
+
+        # Sortable table
+        display_cols = ["pr", "title", "llm_calls", "prompt_tokens", "completion_tokens", "total_tokens", "duration_sec", "cost_usd"]
+        present = [c for c in display_cols if c in joined.columns]
+        view = joined[present].copy()
+        if "cost_usd" in view.columns:
+            view["cost_usd"] = view["cost_usd"].apply(lambda v: f"${v:.4f}")
+        if "duration_sec" in view.columns:
+            view["duration_sec"] = view["duration_sec"].apply(
+                lambda v: f"{v:.1f}s" if pd.notna(v) else ""
+            )
+        for col in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            if col in view.columns:
+                view[col] = view[col].fillna(0).astype(int).map("{:,}".format)
+        st.dataframe(view, use_container_width=True, hide_index=True)
 
 
 # =======================================================================
