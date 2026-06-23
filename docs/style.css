@@ -190,8 +190,15 @@ code, .mono {
 }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
-.title-meta {
+/* Footer block on the title slide — team + repo link, pushed to the bottom */
+.title-footer {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title-meta {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -199,12 +206,11 @@ code, .mono {
   font-size: 0.95rem;
 }
 
-/* Team-members block on the title slide */
+/* Team-members block (same purple→blue gradient as the hero title) */
 .title-team {
-  margin-top: 32px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .title-team-label {
   color: var(--muted);
@@ -216,25 +222,18 @@ code, .mono {
 .title-team-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  max-width: 760px;
+  gap: 14px 20px;
+  max-width: 900px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 .title-team-list span {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(167,139,250,0.10), rgba(96,165,250,0.04));
-  border: 1px solid rgba(167,139,250,0.25);
-  color: var(--text-2);
-  font-size: 0.92rem;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  transition: border-color 160ms ease, transform 160ms ease;
-}
-.title-team-list span:hover {
-  border-color: rgba(167,139,250,0.55);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 /* GitHub repo link in the title-meta row */
