@@ -71,29 +71,24 @@
      ============================================================ -->
 <section class="slide" id="2">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
-  <h1 class="section-title">Why this exists</h1>
-  <p class="subtitle">Code review is the bottleneck no team escapes.</p>
+  <h1 class="section-title">Code review, in under a minute.</h1>
+  <p class="subtitle">Every PR gets a senior-engineer pass before a human even opens it. Findings link to real CWE entries. Fixes come with a follow-up PR.</p>
 
-  <div class="cols three">
+  <div class="cols two" style="margin-top: 12px;">
     <div class="problem-card">
-      <span class="stat">~26h</span>
-      <h3>Reviews are slow</h3>
-      <p>SmartBear's State of Code Review found PR turnaround averages over a day. Critical fixes wait while reviewers context-switch.</p>
+      <span class="stat">~1 min</span>
+      <h3>First pass before coffee</h3>
+      <p>Reviewers wait a day on average; the agents do it in about 60 seconds — security, bugs, performance, and style, all at once.</p>
     </div>
     <div class="problem-card">
-      <span class="stat">~70%</span>
-      <h3>Reviews miss things</h3>
-      <p>Studies of human code review show roughly 30–40% of defects slip past two reviewers — and security issues slip more often than functional bugs.</p>
-    </div>
-    <div class="problem-card">
-      <span class="stat">N×</span>
-      <h3>Reviews don't scale</h3>
-      <p>Senior engineers are scarce. Every junior PR competes for the same handful of approvers — review quality degrades under load.</p>
+      <span class="stat">$0.14</span>
+      <h3>Per PR. Per review.</h3>
+      <p>Measured on a 30-PR load test against a real Airflow fork. Cheaper than the coffee that reviewer was buying.</p>
     </div>
   </div>
 
-  <p class="muted" style="margin-top: 32px; font-size: 0.92rem;">
-    A focused multi-agent system can do the first pass in under a minute, ground every finding in CWE/OWASP, and free reviewers to focus on architecture.
+  <p class="muted" style="margin-top: 36px; font-size: 1rem; max-width: 60ch;">
+    Built so reviewers can spend their time on what humans are still better at — architecture, intent, and judgment — instead of hunting for SQL injections at 11 PM.
   </p>
 </section>
 
