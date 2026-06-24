@@ -20,12 +20,22 @@ SYSTEM = (
 )
 
 PROMPT = """You are given Python code and a list of issues found by reviewers.
-Produce a corrected version of the ENTIRE file that resolves the issues without
-changing intended functionality or public function/class signatures.
+Produce a corrected version of the ENTIRE file that resolves the issues.
 
-Apply these fixes where relevant: parameterized SQL, context managers for files,
-guards for empty inputs / missing attributes, specific exception handling,
-PascalCase class names, secure password handling, and efficient algorithms.
+CHANGE-SCOPE RULES (important):
+- Only change code that addresses a flagged finding. Leave unflagged code
+  byte-identical wherever possible.
+- Do NOT rename existing variables, functions, or modules unless renaming
+  IS the fix for a specific flagged issue. Established Flask/Django/library
+  idioms (e.g. a Flask `app` variable) must not be "improved" cosmetically.
+- Do NOT reformat unflagged code, reorder imports, or rewrite comments
+  unless the reformat IS the fix.
+- Preserve all public function/class signatures and module-level names.
+
+Apply these fixes only when one of them maps to a flagged finding:
+parameterized SQL, context managers for files, guards for empty inputs /
+missing attributes, specific exception handling, secure password handling,
+algorithmic improvements. Don't apply any of them speculatively.
 
 Respond with:
 1. A one-paragraph summary of the changes you made.

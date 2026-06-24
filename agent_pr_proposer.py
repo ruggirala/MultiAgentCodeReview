@@ -465,12 +465,28 @@ def _post_success_comment(
     result: "PRReviewResult",
     outcome: AgentProposalOutcome,
 ) -> None:
+    # CI status varies — say what actually happened.
+    if outcome.workflow_conclusion == "skipped":
+        ci_phrase = "CI gate skipped (`SKIP_CI_GATE=1`)"
+        verified_phrase = "opened the follow-up PR directly"
+    elif outcome.workflow_conclusion == "success":
+        ci_phrase = (
+            f"CI [passed]({outcome.workflow_run_url})"
+            if outcome.workflow_run_url
+            else "CI passed"
+        )
+        verified_phrase = "verified by the demo app's health-check workflow before opening the follow-up PR"
+    else:
+        # Defensive — we shouldn't reach _post_success_comment with a non-success/skipped
+        # conclusion, but just in case, don't lie about CI status.
+        ci_phrase = f"CI conclusion: `{outcome.workflow_conclusion or 'unknown'}`"
+        verified_phrase = "opened the follow-up PR"
+
     body = (
         f"🤖 **Suggested fixes proposed in {outcome.proposed_pr_url}** "
-        f"(CI passed: [{outcome.workflow_conclusion}]({outcome.workflow_run_url})).\n\n"
-        f"Branch `{outcome.agent_branch}` was created with the agent's patches "
-        f"and verified by the demo app's health-check workflow before opening "
-        f"the follow-up PR."
+        f"({ci_phrase}).\n\n"
+        f"Branch `{outcome.agent_branch}` was created with the agent's patches; "
+        f"{verified_phrase}."
     )
     try:
         client.post_pr_comment(result.owner, result.repo, result.number, body)
