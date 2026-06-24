@@ -589,7 +589,7 @@ def render_prs() -> None:
         fig = px.bar(daily, x="timestamp_utc", y="PRs reviewed")
         fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=240)
         fig.update_traces(marker_color=ACCENT)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     section_heading("All reviewed PRs")
     display_cols = [
@@ -607,7 +607,7 @@ def render_prs() -> None:
         "agent_proposal_status",
     ]
     present = [c for c in display_cols if c in view.columns]
-    st.dataframe(view[present], use_container_width=True, hide_index=True)
+    st.dataframe(view[present], width="stretch", hide_index=True)
 
 
 # =======================================================================
@@ -652,7 +652,7 @@ def render_agents() -> None:
             )
         )
         sankey.update_layout(height=380, margin=dict(l=10, r=10, t=10, b=10))
-        st.plotly_chart(sankey, use_container_width=True)
+        st.plotly_chart(sankey, width="stretch")
     else:
         st.info("Need at least one full pipeline run to draw the Sankey.")
 
@@ -668,7 +668,7 @@ def render_agents() -> None:
             points="outliers",
         )
         box.update_layout(yaxis_title="", xaxis_title="", margin=dict(l=10, r=10, t=10, b=10), height=300)
-        st.plotly_chart(box, use_container_width=True)
+        st.plotly_chart(box, width="stretch")
 
     with col_b:
         section_heading("Findings contributed", "by agent")
@@ -686,14 +686,14 @@ def render_agents() -> None:
         )
         bar.update_traces(marker_color=ACCENT)
         bar.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=300)
-        st.plotly_chart(bar, use_container_width=True)
+        st.plotly_chart(bar, width="stretch")
 
     errs = agent_df[agent_df["error"].notna()]
     if not errs.empty:
         section_heading("Agent errors")
         st.dataframe(
             errs[["timestamp_utc", "agent_name", "file_name", "error"]],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -758,7 +758,7 @@ def render_llm() -> None:
         bm = llm_df.groupby(["backend", "model"]).size().reset_index(name="calls")
         bar = px.bar(bm, x="model", y="calls", color="backend")
         bar.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=280)
-        st.plotly_chart(bar, use_container_width=True)
+        st.plotly_chart(bar, width="stretch")
 
     with col_r:
         section_heading("Calls by agent")
@@ -773,14 +773,14 @@ def render_llm() -> None:
             bar = px.bar(ag, x="agent_name", y="calls")
             bar.update_traces(marker_color=ACCENT)
             bar.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=280)
-            st.plotly_chart(bar, use_container_width=True)
+            st.plotly_chart(bar, width="stretch")
 
     errs = llm_df[llm_df["error"].notna()]
     if not errs.empty:
         section_heading("LLM errors")
         err_counts = errs["error"].astype(str).value_counts().head(10).reset_index()
         err_counts.columns = ["error", "count"]
-        st.dataframe(err_counts, use_container_width=True, hide_index=True)
+        st.dataframe(err_counts, width="stretch", hide_index=True)
 
     # ---- Cost per PR -------------------------------------------------
     if not pr_df.empty and "run_id" in llm_df_local.columns:
@@ -835,7 +835,7 @@ def render_llm() -> None:
             )
             hist.update_traces(marker_color="#FBBF24")
             hist.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=240, bargap=0.05)
-            st.plotly_chart(hist, use_container_width=True)
+            st.plotly_chart(hist, width="stretch")
 
         # Sortable table
         display_cols = ["pr", "title", "llm_calls", "prompt_tokens", "completion_tokens", "total_tokens", "duration_sec", "cost_usd"]
@@ -850,7 +850,7 @@ def render_llm() -> None:
         for col in ("prompt_tokens", "completion_tokens", "total_tokens"):
             if col in view.columns:
                 view[col] = view[col].fillna(0).astype(int).map("{:,}".format)
-        st.dataframe(view, use_container_width=True, hide_index=True)
+        st.dataframe(view, width="stretch", hide_index=True)
 
 
 # =======================================================================
@@ -894,10 +894,10 @@ def render_watcher() -> None:
     )
     line = px.line(ts_long, x="timestamp_utc", y="count", color="metric")
     line.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=320)
-    st.plotly_chart(line, use_container_width=True)
+    st.plotly_chart(line, width="stretch")
 
     section_heading("Raw poll cycles")
-    st.dataframe(view, use_container_width=True, hide_index=True)
+    st.dataframe(view, width="stretch", hide_index=True)
 
 
 # ---------- dispatch ----------
