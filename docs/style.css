@@ -102,6 +102,62 @@ body {
   box-shadow: var(--shadow-glow);
 }
 
+/* Animated stats stamp (slide 2 top-right corner) — like a magazine
+ * cover callout: numbers framed by a glowing bordered pill, with a
+ * pulsing green dot to suggest "live, measured, real". */
+.stats-stamp {
+  position: absolute;
+  top: 80px;
+  right: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(167,139,250,0.10), rgba(96,165,250,0.04));
+  border: 1px solid rgba(167,139,250,0.30);
+  box-shadow: 0 0 24px rgba(167,139,250,0.18);
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  animation: stamp-breathe 3.6s ease-in-out infinite;
+}
+.stats-stamp .ss-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-3);
+  box-shadow: 0 0 8px rgba(52,211,153,0.7);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.stats-stamp .ss-figure b {
+  color: var(--text-2);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.0rem;
+  margin-right: 2px;
+}
+.stats-stamp .ss-sep {
+  color: rgba(167,139,250,0.55);
+  font-weight: 700;
+}
+@keyframes stamp-breathe {
+  0%, 100% { box-shadow: 0 0 24px rgba(167,139,250,0.18); border-color: rgba(167,139,250,0.30); }
+  50%      { box-shadow: 0 0 40px rgba(167,139,250,0.32); border-color: rgba(167,139,250,0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stats-stamp,
+  .stats-stamp .ss-dot { animation: none; }
+}
+@media (max-width: 900px) {
+  .stats-stamp {
+    position: static;
+    margin: 12px 0 8px;
+    align-self: flex-start;
+  }
+}
+
 /* ----------------------------------------------------------- *
  *  Typography
  * ----------------------------------------------------------- */
