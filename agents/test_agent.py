@@ -14,14 +14,34 @@ from models.schemas import GeneratedTest, ReviewState
 
 AGENT_NAME = "test_agent"
 
-SYSTEM = "You write clear, runnable pytest test suites for Python code."
+SYSTEM = (
+    "You write clear, runnable pytest test suites that verify code does "
+    "what it actually does, not what you wish it did."
+)
 
-PROMPT = """Write a pytest test suite for the Python code below. Cover:
-- normal/expected behavior of each public function
-- the edge cases that were flagged in review (empty inputs, error handling, etc.)
+PROMPT = """Write a pytest test suite for the Python code below.
+
+ASSERT-ONLY-WHAT-THE-CODE-DOES RULES (important — most failures come from
+ignoring these):
+- Read the code carefully. Every assertion you write must reflect the
+  actual implemented behavior, not the behavior you think would be "good."
+- DO NOT assert that empty inputs return empty results, that None inputs
+  raise specific errors, or that any other input validation happens —
+  UNLESS the code visibly implements that validation.
+- DO NOT invent edge cases beyond what the code handles. A test that
+  fails because the code "should" do something is a broken test.
+- When mocking, re-set return_value between calls if you change the
+  expected output. A mock keeps returning the same value until you
+  change it.
+- Cover normal/expected behavior of each public function. If you can
+  show a meaningful edge case the code DOES handle (visible from the
+  source), include it. Otherwise stop.
 
 Assume the code under test is importable from a module named `solution`
-(i.e. use `from solution import ...`). Use only the standard library and pytest.
+(i.e. use `from solution import ...`). Use only the standard library and
+pytest. The proposer rewrites the placeholder `solution` to the real
+module path before the test is committed — write tests as if the module
+were truly named `solution`.
 
 Respond with the complete test file inside a single ```python code block.
 
