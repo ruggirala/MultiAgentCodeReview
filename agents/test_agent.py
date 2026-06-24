@@ -33,6 +33,21 @@ ignoring these):
 - When mocking, re-set return_value between calls if you change the
   expected output. A mock keeps returning the same value until you
   change it.
+
+VALUE-EXACT vs SHAPE ASSERTIONS (a second class of failures comes from
+mocking around things that are already captured):
+- Module-level constants (e.g. `_STARTED_AT = time.monotonic()` at the
+  top of a file) are evaluated AT IMPORT TIME, before any monkeypatch.
+  Mocking `time.monotonic` later does NOT change the captured value.
+- For derived numeric values (uptime_seconds, timestamps, random tokens,
+  hash digests, generated IDs) — prefer SHAPE assertions over exact
+  values:
+    assert "uptime_seconds" in data and isinstance(data["uptime_seconds"], (int, float))
+    assert 0.0 <= data["uptime_seconds"] < 3600
+  Don't write `assert data["uptime_seconds"] == round(mocked_now - real_started, 3)` —
+  that requires more bookkeeping than is worth it.
+- For static values (version strings, status keys, schema-fixed fields):
+  exact-value assertions are fine.
 - Cover normal/expected behavior of each public function. If you can
   show a meaningful edge case the code DOES handle (visible from the
   source), include it. Otherwise stop.
