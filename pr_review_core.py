@@ -250,6 +250,19 @@ def handle_pr(
 
     all_files = client.list_changed_files(owner, repo, number)
     py = python_files(all_files)
+
+    # Skip files the proposer itself wrote on a previous review — without
+    # this filter the test agent ends up generating tests for its own
+    # tests, ad infinitum (test_app.py → test_test_app.py → ...).
+    _agent_owned_count = sum(1 for f in py if f.filename.startswith("tests/agent_generated/"))
+    py = [f for f in py if not f.filename.startswith("tests/agent_generated/")]
+    for f in (
+        [x for x in python_files(all_files) if x.filename.startswith("tests/agent_generated/")]
+    ):
+        result.skipped.append(f"{f.filename} (agent-generated; not re-reviewed)")
+    if _agent_owned_count:
+        print(f"[pr] skipping {_agent_owned_count} agent-generated test file(s).")
+
     print(
         f"[pr] #{number} '{result.title}': {len(all_files)} changed file(s), "
         f"{len(py)} Python file(s)."

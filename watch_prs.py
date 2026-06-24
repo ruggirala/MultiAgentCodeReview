@@ -157,10 +157,15 @@ def main() -> None:
             try:
                 open_prs = client.list_open_prs(owner, repo)
                 backoff = _ERROR_BACKOFF_START  # reset after a good cycle
+                # Skip PRs whose head is our own '<branch>-agent-suggested'
+                # branch — those are follow-up PRs the proposer just opened.
+                # Without this guard the watcher reviews its own output and
+                # spawns a recursive chain of "Suggested fixes for #N" PRs.
                 new_prs = [
                     pr
                     for pr in open_prs
                     if _pr_key(pr["number"], pr["head"]["sha"]) not in seen
+                    and not pr["head"]["ref"].endswith("-agent-suggested")
                 ]
                 open_count = len(open_prs)
                 new_count = len(new_prs)
