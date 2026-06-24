@@ -33,11 +33,12 @@
     '7': 'RAG layer',
     '8': 'What the agent posts',
     '9': 'Telemetry & dashboard',
-    '10': 'Load-test results',
-    '11': 'Evaluation',
-    '12': 'Case studies',
-    '13': 'Goals',
-    '14': 'Thank you',
+    '10': 'Live demo',
+    '11': 'Load-test results',
+    '12': 'Evaluation',
+    '13': 'Case studies',
+    '14': 'Goals',
+    '15': 'Thank you',
   };
 
   // Initialize the visible-count denominator on first load.

@@ -676,6 +676,41 @@ code, .mono {
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
 }
 
+/* Demo video (slide 10) — reuses the dashboard-shot gradient-border idiom */
+.demo-video {
+  margin: 18px 0 14px;
+  padding: 1px;
+  border-radius: 16px;
+  background: linear-gradient(135deg,
+      rgba(167,139,250,0.55),
+      rgba(96,165,250,0.18) 55%,
+      rgba(255,255,255,0.04) 100%);
+}
+.demo-video video {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+  background: var(--bg);   /* avoids white flash before first frame paints */
+}
+.demo-video figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0 4px;
+}
+.demo-video figcaption .pip {
+  width: 4px;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+
 /* Tech-stack pills (slide 5) */
 .tech-grid {
   display: grid;

@@ -623,9 +623,31 @@
 </section>
 
 <!-- ============================================================
-     Slide 10 — Load test results
+     Slide 10 — Live demo (recorded video)
+     The video file (assets/demo.mp4) is recorded + dropped in by the user;
+     see docs/assets/RECORDING_GUIDE.md for the exact flow.
      ============================================================ -->
 <section class="slide" id="10">
+  <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
+  <h1 class="section-title">See it review a PR.</h1>
+  <p class="subtitle">A real PR on a real repo. No edits. No retakes.</p>
+
+  <figure class="demo-video">
+    <video src="assets/demo.mp4" muted autoplay loop playsinline preload="auto">
+      Your browser doesn't support inline video. Watch at
+      <a href="assets/demo.mp4">assets/demo.mp4</a>.
+    </video>
+    <figcaption>
+      <span class="pip"></span>
+      Recorded against <code>rahulilla/python-simple-webapp</code> · 2–3 min loop, no audio
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================
+     Slide 11 — Load test results
+     ============================================================ -->
+<section class="slide" id="11">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Load-tested in production conditions</h1>
   <p class="subtitle">30 deliberately-buggy PRs opened sequentially against the airflow fork. Watcher live, dashboard recording every event.</p>
@@ -705,9 +727,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 11 — Evaluation
+     Slide 12 — Evaluation
      ============================================================ -->
-<section class="slide" id="11">
+<section class="slide" id="12">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Evaluation — recall on planted bugs</h1>
   <p class="subtitle">Each load-test template plants a bug we know the category of. Did the pipeline catch every planted category? <span class="green">100% — 30/30.</span></p>
@@ -787,9 +809,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 12 — Case studies
+     Slide 13 — Case studies
      ============================================================ -->
-<section class="slide" id="12">
+<section class="slide" id="13">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">Case studies</h1>
   <p class="subtitle">Five concrete bugs the pipeline caught on real PRs to a forked public airflow repo during the load test. Verbatim agent output, full write-ups linked from each card.</p>
@@ -874,9 +896,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 13 — Goals
+     Slide 14 — Goals
      ============================================================ -->
-<section class="slide" id="13">
+<section class="slide" id="14">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
   <h1 class="section-title">What we'd improve next</h1>
   <p class="subtitle">Three things we measured today, with the room we'd want to close.</p>
@@ -919,9 +941,9 @@
 </section>
 
 <!-- ============================================================
-     Slide 14 — Q&A / Links
+     Slide 15 — Q&A / Links
      ============================================================ -->
-<section class="slide" id="14">
+<section class="slide" id="15">
   <div class="brand-chip"><span class="brand-chip-icon">🤖</span><span>Multi-Agent Code Review</span></div>
 
   <h1 class="title-hero" style="font-size: 4.5rem; margin-bottom: 8px;">Thank you.</h1>
@@ -930,7 +952,7 @@
 </section>
 
 <!-- Bottom-fixed nav and counter -->
-<div class="deck-counter"><b id="counter-current">1</b> / <span id="counter-total">14</span> <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
+<div class="deck-counter"><b id="counter-current">1</b> / <span id="counter-total">15</span> <span style="opacity: 0.4;">·</span> <span id="counter-name" style="margin-left: 6px;">Title</span></div>
 <div class="deck-nav">
   <button id="prev-btn">← Prev</button>
   <button id="next-btn">Next →</button>
