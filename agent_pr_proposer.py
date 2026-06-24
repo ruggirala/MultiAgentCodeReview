@@ -406,6 +406,23 @@ def _rewrite_test_imports(test_code: str, *, target_file: str) -> str:
         f"import {module} as solution",
         rewritten,
     )
+    # Rewrite string-literal references to the placeholder module used by
+    # mock.patch() and pkgutil.resolve_name(), e.g.:
+    #   patch('solution.app.run')         → patch('<module>.app.run')
+    #   patch("solution.foo.bar")         → patch("<module>.foo.bar")
+    #   patch('solution', autospec=True)  → patch('<module>', autospec=True)
+    # Anchored by either '.' or the closing quote so we don't accidentally
+    # touch unrelated identifiers like "solution_steps".
+    rewritten = re.sub(
+        r"(['\"])solution(\.[A-Za-z_][\w.]*)\1",
+        rf"\1{module}\2\1",
+        rewritten,
+    )
+    rewritten = re.sub(
+        r"(['\"])solution\1",
+        rf"\1{module}\1",
+        rewritten,
+    )
     return banner + rewritten
 
 
