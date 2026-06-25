@@ -9,43 +9,6 @@ You don't have to read the **What to say** verbatim — it's a floor,
 not a script. Paraphrase, but stay inside the boundaries set by
 **Don't say**.
 
-## Assignments
-
-Fill in your name next to your slides. The numbers correspond to the
-sections below.
-
-| #  | Slide title                              | Speaker            |
-|----|------------------------------------------|--------------------|
-| 1  | Title                                    | _____              |
-| 2  | Why this exists                          | _____              |
-| 3  | System architecture                      | _____              |
-| 4  | Per-PR pipeline flow                     | _____              |
-| 5  | Under the hood                           | _____              |
-| 6  | Design choices                           | _____              |
-| 7  | Grounded with RAG                        | _____              |
-| 8  | What the agent posts                     | _____              |
-| 9  | Telemetry & dashboard                    | _____              |
-| 10 | Live demo                                | _____              |
-| 11 | Load-test results                        | _____              |
-| 12 | Evaluation                               | _____              |
-| 13 | Case studies                             | _____              |
-| 14 | What we'd improve next                   | _____              |
-| 15 | Q&A / Links                              | _____              |
-
-## Universal tips
-
-- **Don't read the slide.** The judges can see it. Use the slide as a
-  visual anchor and say something the slide *doesn't* say.
-- **When asked about a limit, name it.** Honest acknowledgement of a
-  gap beats a confident dodge. Every "Don't say" below has a paired
-  honest answer you can give if pressed.
-- **Numbers are real.** Every figure on the slides comes from
-  `runs/events.jsonl` or `load_test/status.json`. If a judge asks
-  "where does the number come from," the answer is "telemetry from our
-  30-PR load test against rahulilla/airflow."
-
----
-
 ## Slide 1 — Title
 
 **Big idea.** Set the room. Six-person team, one project, open-source
