@@ -14,6 +14,18 @@ not a script. Paraphrase, but stay inside the boundaries set by
 **Big idea.** Set the room. Six-person team, one project, open-source
 repo.
 
+**Killer opener (10 lines — say this first, look up, smile).**
+1. "Every engineering team in this room has the same bottleneck.
+2.  It isn't writing code. It's reviewing it.
+3.  Pull requests sit for hours. Bugs slip through. Senior reviewers burn out.
+4.  And the slowest, most expensive humans on the team are the ones holding the queue.
+5.  So we built something different.
+6.  Five specialized AI agents that review every pull request before a human even opens it.
+7.  Security. Bugs. Performance. Style. Each one an expert in one thing.
+8.  We're six engineers. The project is open-source. The deck you're seeing is served from the same repo.
+9.  In the next fifteen minutes we'll show you the system, the numbers, and a real PR getting reviewed in under a minute.
+10. I'm <name>. Let's begin."
+
 **What to say.** "Our capstone is a Multi-Agent Code Review system —
 a LangGraph pipeline of five AI agents that reviews every GitHub
 pull request for security, bugs, performance, and style. We built it
@@ -41,6 +53,18 @@ GitHub integration + watcher (W), load test + evaluation (V), slides
 **Big idea.** Hook the room with the value proposition, not the
 problem. Two concrete numbers — speed and cost — from our own load
 test.
+
+**Killer opener (10 lines — punch in, name the cost, then the win).**
+1. "Picture the last pull request you opened. How long did it sit there before someone reviewed it?
+2.  Hours? A day? Across a whole team, that delay compounds into weeks of lost shipping velocity every quarter.
+3.  And when the review finally happens, it's inconsistent — depends on who looked, how tired they were, what they happened to notice.
+4.  Security bugs slip through. Performance regressions slip through. Style debates eat the comments.
+5.  That's the gap we set out to close.
+6.  Five specialized AI agents do the first pass on every PR — before a human opens it.
+7.  Security, bugs, performance, style — each agent is an expert in one thing.
+8.  On our load test: every PR reviewed in about a minute. Fourteen cents each. Findings cite real CWE numbers.
+9.  The agent doesn't just complain — it commits its suggested fix as a follow-up pull request the reviewer can merge or reject.
+10. The human still decides. We just gave them a clean starting point."
 
 **What to say.** "Code review at most companies is slow, inconsistent,
 and bottlenecked on senior engineers. We built five specialized AI
