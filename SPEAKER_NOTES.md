@@ -11,40 +11,54 @@ not a script. Paraphrase, but stay inside the boundaries set by
 
 ## Slide 1 — Title
 
-**Big idea.** Set the room. Six-person team, one project, open-source
-repo.
+**Big idea.** Set the room. Introduce the team, the project, and
+where it lives. Get the audience curious enough to want slide 2.
 
-**Killer opener (10 lines — say this first, look up, smile).**
-1. "Every engineering team in this room has the same bottleneck.
-2.  It isn't writing code. It's reviewing it.
-3.  Pull requests sit for hours. Bugs slip through. Senior reviewers burn out.
-4.  And the slowest, most expensive humans on the team are the ones holding the queue.
-5.  So we built something different.
-6.  Five specialized AI agents that review every pull request before a human even opens it.
-7.  Security. Bugs. Performance. Style. Each one an expert in one thing.
-8.  We're six engineers. The project is open-source. The deck you're seeing is served from the same repo.
-9.  In the next fifteen minutes we'll show you the system, the numbers, and a real PR getting reviewed in under a minute.
-10. I'm <name>. Let's begin."
+**Opening — say this as one connected story, not a list.**
 
-**What to say.** "Our capstone is a Multi-Agent Code Review system —
-a LangGraph pipeline of five AI agents that reviews every GitHub
-pull request for security, bugs, performance, and style. We built it
-because code review is the slowest, most error-prone step in any
-team's PR flow, and it scales worst at exactly the moment teams need
-it most. Everything is open-source — the repo URL is at the bottom.
-The deck itself is served from that repo on GitHub Pages. I'll hand
-off to <next speaker> to walk through the problem."
+"Good morning, everyone. Thank you for being here.
 
-**What to point at.** Title hero, team-member list at the bottom,
-repo link.
+Before we tell you what we built, let me tell you why we built it.
 
-**Likely judge question.** *"Six people on one project — how did you
-split the work?"* Honest answer: pipeline architecture and LangGraph
-plumbing (X), agent prompts + RAG (Y), telemetry + dashboard (Z),
-GitHub integration + watcher (W), load test + evaluation (V), slides
-+ design (U). Pick your own split when answering.
+Every engineering team has the same hidden bottleneck. It isn't
+writing code — teams have gotten very good at that. It's reviewing
+the code. Pull requests sit for hours. Bugs slip through. The senior
+engineers who should be designing systems end up spending their day
+reading other people's code, line by line. And as the team grows,
+the problem gets worse, not better.
 
-**Don't say.** "Production-ready" — it's a capstone, not a product.
+So we asked a simple question. What if the first pass on every pull
+request didn't have to be a tired human at the end of their day?
+What if it could be five specialized AI agents — one for security,
+one for bugs, one for performance, one for style — each focused on
+the one thing it does best? And what if those agents didn't just
+complain, but actually proposed the fix as a follow-up pull request
+the human could merge or reject?
+
+That is what we built. It's called the Multi-Agent Code Review
+system. The whole project is open-source, the repository link is at
+the bottom of the slide, and the slide deck you are watching right
+now is served from that same repository.
+
+We're a team of six. Over the next fifteen minutes we'll walk you
+through the system, the design choices, the real numbers we measured
+on a 30-PR load test, and a live demo of an actual pull request
+getting reviewed in under a minute. My name is <name>, and I'll be
+handing over to <next speaker> in a moment to take you through why
+this problem matters."
+
+**What to point at.** The project title at the top, the team
+members listed underneath, the repository link.
+
+**Likely judge question.** *"Six people on one project — how did
+you split the work?"* Honest answer: each member owned a different
+slice — pipeline + LangGraph plumbing, agent prompts + the RAG
+layer, telemetry + dashboard, GitHub integration + the watcher,
+load testing + evaluation, slides + design. Pick the split that
+matches reality when answering.
+
+**Don't say.** "Production-ready." This is a capstone, not a
+product. Lead with what we measured, not what we promise.
 
 ---
 
