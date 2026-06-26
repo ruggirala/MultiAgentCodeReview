@@ -133,59 +133,120 @@ human still has to merge.
 ## Slide 3 — System architecture
 
 **Big idea.** Show the LangGraph state machine end-to-end. One
-typed object flows through every node.
+typed object flows through every node. This is the deepest
+architectural slide — plan to spend two and a half minutes here.
 
 **Opening — say this as one connected story, not a list.**
 
-"Here's the entire system on one slide. Let me walk you through it
-from top to bottom.
+"This is the most important architectural slide in the deck, so I'm
+going to take a couple of minutes to walk you through it carefully.
+Everything we say later — about agents, RAG, telemetry, the
+follow-up PR — assumes you understand this picture.
 
-At the top, a pull request gets opened. At the bottom, a structured
-review comment appears on that pull request, along with a follow-up
-pull request that contains the suggested fix. Everything in between
-is what we're going to talk about for the next few slides.
+Let me start with the boundaries. At the top of the slide, a pull
+request gets opened on GitHub. That's our input. At the bottom, two
+things appear back on that pull request — a structured review
+comment, and a follow-up pull request that contains the suggested
+fix and a generated pytest suite. That's our output. Everything in
+between is the system itself.
 
-The system is a state machine built on LangGraph. Eight nodes,
-arranged in order. A single Pydantic object — we call it the
-ReviewState — flows through every node. It carries the file name,
-the source code, the chunks the orchestrator produced, the findings
-the agents added, and eventually the patch and the generated tests.
+The system is a state machine built on LangGraph. There are eight
+nodes, arranged in a directed graph with one conditional branch.
+The framework gives us three things that mattered to us — explicit
+edges between nodes, retry logic built in, and the ability to
+declare a conditional edge that pauses the pipeline for human
+input. That last point becomes important in a moment.
 
-The three analysis agents — security, bug, and style — each add
-their findings to that shared state. A triage step then decides
-whether a human needs to weigh in based on the severity of what was
-found. After that, the patch agent generates the fixed code, and
-the tests agent writes a pytest suite to verify the fix doesn't
-regress anything.
+Now, the most important piece on this slide isn't any of the nodes.
+It's the object in the center — the ReviewState. This is a single
+Pydantic model that gets passed to every node in sequence. It
+carries the file name, the source code, the chunks the orchestrator
+produced, the findings each agent added, the patch, the generated
+tests, and any errors. Every node receives this state object, does
+its work, mutates the state, and returns it. No node talks to any
+other node directly — they only communicate through this shared
+typed object. That single design choice is what makes the whole
+system testable and debuggable.
 
-The important architectural detail is that no node talks to another
-node directly. They all read from and write to the same typed
-state. That's how we know — at validation time — that the data
-shapes between agents are always correct."
+Let me walk through what each node does.
 
-**What to say.** "The system is a LangGraph state machine. A
-`ReviewState` Pydantic object enters at the top — file name, source
-code — and walks through eight nodes in order. The orchestrator
-parses the file into chunks using tree-sitter. Then security, bug,
-and style agents each add findings to the shared state. Triage
-checks if any are Critical or High security — if yes, the flow
-routes through a `human_review` checkpoint. Patch generates the
-fixed code. Tests generate a pytest suite. The final state is
-serialized and posted back to GitHub as a comment, plus a follow-up
-PR with the fix. The whole thing is one function call:
-`app.invoke(initial_state)`."
+The orchestrator parses the source code into logical chunks —
+functions and classes — using tree-sitter, which is the same parser
+GitHub uses for code navigation. It's language-agnostic, which
+matters because we want to extend beyond Python. If tree-sitter
+isn't available, we fall back to Python's standard library ast
+module.
 
-**What to point at.** The animated SVG flow paths, the central
-shared-state node, the conditional `human_review` branch.
+Then we hit the three analysis agents. Security comes first — it
+looks for vulnerabilities and, if RAG is enabled, cites real CWE
+numbers from the database. Bug runs next, looking for logic errors,
+edge cases, mutable defaults, and unhandled exceptions. Style runs
+third — it's actually a hybrid that combines pylint and radon
+locally with an LLM pass for performance anti-patterns. All three
+agents read the same chunks and append their findings to the same
+shared list on the state.
+
+Once analysis is done, we hit triage. This node is plain Python —
+no LLM. It looks at all the findings collected so far and asks one
+question — are there any Critical or High severity security
+findings? If yes, the conditional edge routes through a
+human_review node, which logs the situation and currently passes
+through. The hook is wired so we can extend it to actually pause
+the pipeline for a human in the loop, but in today's implementation
+it logs and continues.
+
+After that comes patch — the agent that generates the fixed code.
+It reads all the findings, takes the original source, and produces
+a patched version. Then tests — which reads the patched code and
+writes a pytest suite to verify that the fix doesn't regress
+anything.
+
+When all eight nodes finish, the state object is fully populated.
+We serialize it into a GitHub comment, push the patched code to a
+sibling branch named with an 'agent-suggested' suffix, and open a
+follow-up pull request. The whole flow — from input to output — is
+one function call: app dot invoke of the initial state.
+
+The reason this architecture matters is that every contract between
+agents is a Pydantic field, validated at runtime. We never pass JSON
+strings between agents and parse them defensively. If an agent
+returns the wrong shape, Pydantic raises immediately. That's the
+foundation that makes the rest of the system reliable."
+
+**What to point at.** Start at the top of the diagram (PR opens),
+then trace down through the orchestrator, the three analysis
+agents, the triage diamond, the human-review branch, patch and
+tests, and finally the two outputs at the bottom. Pause briefly
+on the ReviewState orb in the center — that's the slide's
+single most important element.
 
 **Likely judge question.** *"What if one agent fails — does the
 whole pipeline crash?"* Honest answer: each node is wrapped in
-try/except. A failed agent records its error to `state.errors` and
-the pipeline continues. The dashboard's agent-error-rate KPI tracks
-this; in our load test it's been zero across 240+ LLM calls.
+try/except. A failed agent records its error to `state.errors`
+and the pipeline continues. The dashboard's agent-error-rate KPI
+tracks this; in our load test it's been zero across 240-plus LLM
+calls. If you want a concrete example: if the security agent's
+LLM call times out, it returns the state with an error logged,
+and the bug and style agents still run normally. The reviewer
+gets a partial review instead of no review.
 
-**Don't say.** "Every agent is an LLM call." Only five of them are
-— orchestrator and triage are deterministic Python.
+**Other likely follow-ups to be ready for.**
+- *"Why eight nodes and not fewer?"* Because each node has one
+  responsibility. Mixing security and bug into one prompt makes
+  findings shallower — we tested it.
+- *"What does the orchestrator actually do?"* It parses the file
+  into chunks using tree-sitter so the analysis agents can review
+  function-by-function rather than swallowing a giant file.
+- *"Why is patch separate from tests?"* Because tests reads the
+  patched code as input. They must run sequentially, not in
+  parallel. That's the bottleneck on slide 4.
+- *"Is the human_review node ever actually used?"* Today it's a
+  logged-only pass-through. The hook is wired for a future
+  blocking implementation.
+
+**Don't say.** "Every agent is an LLM call." Only five of them
+are — orchestrator and triage are deterministic Python with no
+LLM, and human_review is just a logging pass-through today.
 
 ---
 
