@@ -6,8 +6,6 @@ It can review a local file or a **live GitHub pull request** and post its analys
 back as a PR comment.
 
 > **Slides:** [rahulilla.github.io/MultiAgentCodeReview](https://rahulilla.github.io/MultiAgentCodeReview/) — 10-slide deck on architecture, telemetry, and load-test results.
->
-> **For presenters:** see [`SPEAKER_NOTES.md`](SPEAKER_NOTES.md) — per-slide speaker brief (one section per slide) for team capstone presentation.
 
 ## Architecture
 
