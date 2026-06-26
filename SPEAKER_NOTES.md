@@ -80,11 +80,17 @@ can merge or reject."
 animated 6-agents stamp in the top-right corner.
 
 **Likely judge question.** *"How is this different from Copilot's PR
-review or other LLM code reviewers?"* Honest answer: most are a
-single big prompt against the diff. We use multiple specialized
-agents over typed Pydantic state, RAG-grounded security findings,
-and a real telemetry dashboard. Slide 6 covers our design choices
-in detail.
+review or other LLM code reviewers?"* Honest answer: three concrete
+differences. One — multi-agent pipeline, not one prompt; each agent
+has a single mental frame (security, bugs, performance, style) and
+the cross-agent contract is typed Pydantic, validated server-side by
+OpenAI Structured Outputs. Two — every security finding cites a real
+CWE because we RAG-ground against the actual CWE database, not the
+model's recollection. Three — we commit the suggested fix as a
+follow-up PR with a generated pytest suite, not just a comment. Plus
+real telemetry on a live dashboard — 30 PRs, $4.56 total, 100%
+recall on planted bugs. Slide 6 covers the design choices; slide 7
+covers the RAG layer.
 
 **Don't say.** "Replaces human reviewers." It augments them — the
 human still has to merge.
