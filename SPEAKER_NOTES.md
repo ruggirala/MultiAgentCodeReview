@@ -68,17 +68,36 @@ product. Lead with what we measured, not what we promise.
 problem. Two concrete numbers — speed and cost — from our own load
 test.
 
-**Killer opener (10 lines — punch in, name the cost, then the win).**
-1. "Picture the last pull request you opened. How long did it sit there before someone reviewed it?
-2.  Hours? A day? Across a whole team, that delay compounds into weeks of lost shipping velocity every quarter.
-3.  And when the review finally happens, it's inconsistent — depends on who looked, how tired they were, what they happened to notice.
-4.  Security bugs slip through. Performance regressions slip through. Style debates eat the comments.
-5.  That's the gap we set out to close.
-6.  Five specialized AI agents do the first pass on every PR — before a human opens it.
-7.  Security, bugs, performance, style — each agent is an expert in one thing.
-8.  On our load test: every PR reviewed in about a minute. Fourteen cents each. Findings cite real CWE numbers.
-9.  The agent doesn't just complain — it commits its suggested fix as a follow-up pull request the reviewer can merge or reject.
-10. The human still decides. We just gave them a clean starting point."
+**Opening — say this as one connected story, not a list.**
+
+"Let me start with a question. Picture the last pull request you
+opened. How long did it sit there before someone reviewed it? Hours?
+A day? For most teams, the answer is at least one of those — and
+across an entire engineering organization, that delay compounds
+into weeks of lost shipping velocity every quarter.
+
+And when the review finally happens, it's inconsistent. It depends
+on who looked, how tired they were, and what they happened to
+notice that day. Security issues slip through. Performance
+regressions slip through. Style debates eat half the comments.
+
+That is the gap we set out to close.
+
+What we built is right here on the slide. Five specialized AI
+agents that do the first pass on every pull request, before a human
+opens it. One for security. One for bugs. One for performance. One
+for style. Each one is an expert in just the one thing — and that
+focus is what makes them consistent.
+
+The numbers on the screen are real. On our 30-PR load test, every
+pull request was reviewed in about a minute, at fourteen cents each.
+A 100-PR-per-week team would spend roughly fourteen dollars a week
+on this — less than one engineer-hour. And the agent doesn't just
+complain. It commits its suggested fix as a follow-up pull request
+the reviewer can merge or reject.
+
+The human still decides. We've just made sure they're not the first
+line of defense — we are."
 
 **What to say.** "Code review at most companies is slow, inconsistent,
 and bottlenecked on senior engineers. We built five specialized AI
@@ -116,17 +135,33 @@ human still has to merge.
 **Big idea.** Show the LangGraph state machine end-to-end. One
 typed object flows through every node.
 
-**Killer opener (10 lines — walk the picture left to right).**
-1. "Here's the whole system on one slide.
-2.  At the top: a pull request gets opened.
-3.  At the bottom: a structured review comment and a follow-up PR with the fix.
-4.  In between — a state machine of eight nodes built on LangGraph.
-5.  One Pydantic object — the ReviewState — flows through every node.
-6.  Three analysis agents add findings. A triage step decides if a human needs to weigh in.
-7.  Then patch generates the fixed code, and tests writes a pytest suite to verify it.
-8.  No node talks to another directly. They all read and write to the same typed state.
-9.  That's how we know — at compile time — that the data shapes are correct.
-10. Let me walk through how this actually executes, end to end."
+**Opening — say this as one connected story, not a list.**
+
+"Here's the entire system on one slide. Let me walk you through it
+from top to bottom.
+
+At the top, a pull request gets opened. At the bottom, a structured
+review comment appears on that pull request, along with a follow-up
+pull request that contains the suggested fix. Everything in between
+is what we're going to talk about for the next few slides.
+
+The system is a state machine built on LangGraph. Eight nodes,
+arranged in order. A single Pydantic object — we call it the
+ReviewState — flows through every node. It carries the file name,
+the source code, the chunks the orchestrator produced, the findings
+the agents added, and eventually the patch and the generated tests.
+
+The three analysis agents — security, bug, and style — each add
+their findings to that shared state. A triage step then decides
+whether a human needs to weigh in based on the severity of what was
+found. After that, the patch agent generates the fixed code, and
+the tests agent writes a pytest suite to verify the fix doesn't
+regress anything.
+
+The important architectural detail is that no node talks to another
+node directly. They all read from and write to the same typed
+state. That's how we know — at validation time — that the data
+shapes between agents are always correct."
 
 **What to say.** "The system is a LangGraph state machine. A
 `ReviewState` Pydantic object enters at the top — file name, source
@@ -159,17 +194,35 @@ this; in our load test it's been zero across 240+ LLM calls.
 **Big idea.** Same flow as slide 3, but with real timing numbers
 attached to each node.
 
-**Killer opener (10 lines — make the numbers do the talking).**
-1. "Now let's look at how long each step actually takes.
-2.  These are real numbers from our 30-PR load test — median timings, in seconds.
-3.  Orchestrator? Milliseconds. It's just tree-sitter parsing.
-4.  Security and bug agents? Three to six seconds each — those are the LLM calls.
-5.  Style — about three seconds. Pylint and Radon run locally, then a short LLM perf pass.
-6.  Triage and human-review — instant. They're Python conditionals, not LLM calls.
-7.  Patch and tests — the slow ones, about 21 seconds each. They generate longer outputs.
-8.  Total median: 57.5 seconds per PR.
-9.  Patch and tests are our bottleneck. They run sequentially because tests reads the patched code.
-10. So when someone asks 'how can you go faster?' — that's the part you parallelize."
+**Opening — say this as one connected story, not a list.**
+
+"The previous slide showed you the shape of the system. This one
+shows you how long each step actually takes. Every number on this
+slide comes from our 30-PR load test — these are median timings, in
+seconds, measured on real pull requests.
+
+Let me walk it left to right.
+
+The orchestrator runs in milliseconds. It's just tree-sitter parsing
+the source code — no LLM call, no network. The security and bug
+agents are the first LLM calls — they each take three to six
+seconds, depending on file size. The style agent takes about three
+seconds total: it runs pylint and radon locally first, then a short
+LLM pass for performance anti-patterns.
+
+Triage and human-review are instant. They're plain Python
+conditionals — no LLM involved. They just check whether the
+findings count and severity warrant pausing for a human.
+
+Then we hit the bottleneck. The patch agent and the tests agent
+each take around 21 seconds, because they generate the longest
+outputs — the patched code, and a complete pytest suite. These two
+have to run sequentially, not in parallel, because the tests agent
+reads the patched code as its input.
+
+So when someone asks 'how can you make this faster?' — patch and
+tests is the answer. That's the half of the pipeline worth
+parallelizing, and we'll come back to that on slide 14."
 
 **What to say.** "This is the same pipeline, but timed. Median
 durations from our 30-PR load test: orchestrator parses in
@@ -202,17 +255,37 @@ logged-only checkpoint today — see slide 6.
 **Big idea.** Concrete tech stack. Ten logo pills the judges
 recognize.
 
-**Killer opener (10 lines — defend the stack one tool per beat).**
-1. "Now the question every judge asks — what's actually under the hood?
-2.  We made one rule for this project: every tool we picked had to earn its place.
-3.  LangGraph — for the state machine. Explicit conditional edges, retry logic built in.
-4.  Pydantic v2 — for every cross-agent data shape. Typed at compile time, validated at runtime.
-5.  Tree-sitter — for parsing code. Language-agnostic, AST-level. Stdlib ast as fallback.
-6.  ChromaDB — for the RAG corpus. CWE and OWASP Top-10 embedded with all-MiniLM-L6-v2.
-7.  GPT-4o — primary backend, on OpenAI's structured-outputs path.
-8.  CodeLlama-7B 4-bit — keyless fallback, runs on a Colab T4 with no API key.
-9.  Streamlit and Plotly — the dashboard. Tails our JSONL telemetry, refreshes every 10 seconds.
-10. GitHub REST API — no PyGithub wrapper, no extra dependency. Boring, on purpose."
+**Opening — say this as one connected story, not a list.**
+
+"Now we get to the question every audience asks at this point — so
+what's actually under the hood?
+
+The rule we set for ourselves was simple. Every tool we picked had
+to earn its place. If it wasn't solving a specific problem we had,
+it didn't get in. That's why the stack on this slide is
+deliberately boring — every logo on the screen is doing one
+specific job.
+
+Let me walk you through it.
+
+LangGraph runs the state machine. We picked it for explicit
+conditional edges and built-in retry logic. Pydantic v2 enforces
+the shape of every piece of data passed between agents. Tree-sitter
+parses source code at the AST level — and it's language-agnostic,
+which matters when we extend beyond Python. ChromaDB stores our RAG
+corpus — the CWE database and OWASP Top-10 entries — embedded with
+all-MiniLM-L6-v2, a small, fast, CPU-friendly model.
+
+For the LLM itself, we run a hybrid backend. GPT-4o is the primary,
+on OpenAI's structured-outputs path. CodeLlama 7B in 4-bit
+quantization is the keyless fallback — it runs on a Colab T4 with
+no API key, which means anyone can run this end-to-end without
+paying for an OpenAI account.
+
+The dashboard is built on Streamlit and Plotly. It tails our JSONL
+telemetry file and refreshes every ten seconds. And for GitHub
+integration, we use the raw REST API directly — no PyGithub
+wrapper, no extra dependency. Boring, on purpose."
 
 **What to say.** "The stack is intentionally boring. LangGraph for
 the state machine. Pydantic v2 for every cross-agent data shape.
@@ -242,17 +315,41 @@ CodeLlama-7B is not a frontier model.
 **Big idea.** Show six pivot points where we made a real decision,
 with the alternative we rejected.
 
-**Killer opener (10 lines — frame as 'we said no to X, yes to Y').**
-1. "Every project has decisions you can defend, and decisions you just made.
-2.  This slide is the first kind. Six places we made a real bet — and the alternative we rejected.
-3.  We picked LangGraph over raw LangChain — because we needed explicit conditional edges and real interrupt points.
-4.  We picked Pydantic state between agents — over passing JSON strings — because the schema is enforced server-side by OpenAI.
-5.  We kept the agents sequential — not parallel — because they share one mutable findings list. No lock contention.
-6.  We picked JSONL append-only telemetry — over a real database — because there's nothing to operate, and Streamlit can tail it directly.
-7.  We picked a hybrid LLM backend — GPT-4o plus CodeLlama fallback — so the system runs end-to-end without an API key.
-8.  And we picked a hand-curated 30-bug load test — over LLM-generated bugs — because we need deterministic re-runs to grade the pipeline.
-9.  The strongest single bet on this slide is wedge 02 — structured outputs.
-10. The model literally cannot return malformed JSON. That changed everything downstream."
+**Opening — say this as one connected story, not a list.**
+
+"Every project has decisions you can defend, and decisions you just
+made because you had to pick something. This slide is the first
+kind. Six places where we made a real architectural bet, with a
+clear alternative we rejected.
+
+Let me walk through them.
+
+We picked LangGraph over raw LangChain because we needed explicit
+conditional edges and real interrupt points — not just a chain of
+prompts. We picked Pydantic state between agents instead of passing
+JSON strings, because the schema gets enforced server-side by
+OpenAI's Structured Outputs API. The model literally cannot return
+malformed JSON.
+
+We kept the agents sequential, not parallel, because they share one
+mutable findings list. Parallelizing would mean lock contention and
+race conditions for a savings of about six seconds out of a
+fifty-seven-second run — not worth the complexity. We picked
+append-only JSONL telemetry over a real database, because there's
+nothing to operate and Streamlit can tail the file directly.
+
+We picked a hybrid LLM backend — GPT-4o for the dev path, CodeLlama
+for the keyless fallback — so the system runs end-to-end without
+an OpenAI account. And finally, we picked a hand-curated 30-bug
+load test over LLM-generated bugs, because we need deterministic
+re-runs to actually grade the pipeline.
+
+The strongest single bet on this slide is the second wedge —
+structured outputs. The contract between the model and our code is
+now server-side enforced. That one decision changed everything
+downstream — no defensive parsing, no JSON-schema drift, no
+hallucinated field names. Just typed objects in, typed objects
+out."
 
 **What to say.** "Six design decisions worth defending. We chose
 LangGraph over raw LangChain chains for explicit conditional edges.
@@ -286,17 +383,38 @@ node is wired but doesn't gate.
 **Big idea.** Why our security findings cite real CWE numbers, not
 hallucinated categories.
 
-**Killer opener (10 lines — show the failure mode RAG fixes).**
-1. "Here's a failure mode we hit early. We asked an LLM 'is this code SQL injection?'
-2.  The model said yes. It cited a CWE number. It sounded confident.
-3.  We looked up the CWE. It didn't exist. The model made it up.
-4.  That's the security agent's biggest enemy — plausible, well-formatted, wrong findings.
-5.  So we grounded it. We embedded the actual CWE database and OWASP Top-10 into ChromaDB.
-6.  Before the security agent generates a finding, it embeds the code chunk and retrieves the top matching CWE descriptions — the real text, verbatim.
-7.  We inject that text directly into the prompt.
-8.  Now the model isn't recalling from training data — it's looking at the actual source.
-9.  Toggle is one env variable, USE_RAG=1. We can A/B-test the difference live.
-10. Result: every Critical-severity security finding cites a real CWE. No more hallucinated category numbers."
+**Opening — say this as one connected story, not a list.**
+
+"Let me tell you about a failure mode we hit early in development —
+because the solution is the entire reason this slide exists.
+
+We asked an LLM 'is this code vulnerable to SQL injection?' The
+model said yes, with high confidence, and cited a CWE number to
+back it up. The problem was, when we actually looked up that CWE
+number, it didn't exist. The model had fabricated it.
+
+That's the security agent's biggest enemy — a finding that is
+plausible, well-formatted, and completely wrong. A reviewer reading
+it would have no easy way to know.
+
+So we grounded it. We took the actual CWE database — the public
+MITRE catalog — and the OWASP Top-10 entries, and we embedded them
+into ChromaDB using a small sentence-transformers model called
+all-MiniLM-L6-v2.
+
+Now, before the security agent generates a finding, it does
+something different. It first embeds the code chunk it's looking
+at, retrieves the top matching CWE descriptions from the database
+— the real text, verbatim — and injects that text directly into
+the prompt. The model is no longer recalling vulnerability
+categories from training data. It's reading the actual source
+material.
+
+This is gated by a single environment variable, USE_RAG=1, so we
+can A/B-test the difference live. And the result is exactly what
+we hoped for. Every Critical-severity security finding now cites a
+real CWE number, with descriptions that match the catalog. No more
+hallucinated category numbers."
 
 **What to say.** "Without grounding, an LLM asked 'is this SQL
 injection?' will tell you yes and call it CWE-89 from memory — but
@@ -327,17 +445,39 @@ watcher runs without it unless `USE_RAG=1`.
 
 **Big idea.** Show the agent's actual GitHub comment, not a mockup.
 
-**Killer opener (10 lines — anchor on 'this is real, not a mockup').**
-1. "This is not a mockup. This is the actual comment the agent posted on a real pull request yesterday.
-2.  Top of the comment: the file name and the total finding count.
-3.  Below that: a severity table, grouped by file. Critical, High, Medium, Low.
-4.  A reviewer can scan that table in under five seconds and decide whether to bother opening the rest.
-5.  Then every finding: severity, category, exact line number, CWE if it's a security issue, and a one-line suggested fix.
-6.  The format is consistent because every finding is a typed Pydantic object — the rendering is a template over typed data.
-7.  Notice the CWE-89 chip on the first one. That's not a hallucinated label. That's grounded in the CWE database via the RAG layer.
-8.  And the recommendation isn't 'consider improving this.' It's actionable — parameterize the query, use prepared statements.
-9.  We also save a markdown report and a zip of the fixed code locally — and we open a follow-up pull request with the patch.
-10. So the human reviewer doesn't just see a comment. They see a clean starting point they can merge or reject."
+**Opening — say this as one connected story, not a list.**
+
+"What you're looking at on this slide is not a mockup. This is the
+actual comment the agent posted on a real pull request, on a real
+GitHub repository. I want to walk you through the structure,
+because every section of this comment is intentional.
+
+At the top, you see the file name and the total finding count.
+Right below it, there's a severity table grouped by file —
+Critical, High, Medium, Low. A reviewer can scan that table in
+under five seconds and decide whether the rest of the comment is
+worth their attention.
+
+Underneath the table, you see the findings themselves. Each one has
+a severity, a category, an exact line number, a CWE identifier
+when it's a security issue, and a one-line suggested fix. The
+format is identical from finding to finding because every finding
+is a typed Pydantic object underneath, and the comment renderer is
+just a template over typed data. No string concatenation. No
+free-form prose.
+
+Look at the CWE-89 chip on the first finding. That label isn't a
+guess by the model — it's grounded in the CWE database via the RAG
+layer we just covered on slide 7. And the recommendation is not
+'consider improving this.' It's actionable — parameterize the
+query, use prepared statements. A reviewer can act on it without
+having to interpret what the agent meant.
+
+There's more behind the scenes too. We save a Markdown report and
+a zip of the fixed code locally. And critically — we open a
+follow-up pull request containing the patch. So the human reviewer
+doesn't just see a comment. They see a clean starting point they
+can merge or reject."
 
 **What to say.** "This is the real comment the agent posted on a
 load-test PR. Header has the file name and findings count. Then a
@@ -370,17 +510,33 @@ CWEs; bug, style, and performance findings don't.
 **Big idea.** Every run emits structured events. The dashboard
 makes them legible.
 
-**Killer opener (10 lines — observability earns trust).**
-1. "You can't trust what you can't measure. So we instrumented everything.
-2.  Every PR review emits four kinds of structured events to a JSONL file.
-3.  One pr_review event per PR — counts, severities, total duration.
-4.  One agent event per LangGraph node — per-node timing, findings added, errors.
-5.  One llm_call event per API call — backend, model, tokens, retries, cost.
-6.  One poll_cycle event per watcher tick — what's open, what's new, what failed.
-7.  Every event is itself a Pydantic model. The schema is enforced when we write the line.
-8.  This Streamlit dashboard tails that file. Auto-refreshes every 10 seconds.
-9.  Everything you see — the KPIs, the agent-flow Sankey, the cost histogram — is real load-test data, not mocked.
-10. That's how we know it works. Not because we wrote a confident README — because we have the receipts."
+**Opening — say this as one connected story, not a list.**
+
+"There's a principle we kept coming back to during this project —
+you can't trust what you can't measure. So we instrumented
+everything.
+
+Every pull request review emits four kinds of structured events to
+a single JSONL file. There's one pr_review event per pull request —
+with counts, severities, and total duration. There's one agent
+event per LangGraph node — with per-node timing, findings added,
+and any errors. There's one llm_call event per API call — with
+backend, model name, tokens, retries, and cost. And there's one
+poll_cycle event per watcher tick — what was open, what was new,
+what failed.
+
+Every event is itself a Pydantic model, and the schema is enforced
+the moment we write the line. So if our schema ever drifts, we
+catch it immediately when the dashboard tries to re-validate.
+
+The Streamlit dashboard you see on the right tails that JSONL file
+and auto-refreshes every ten seconds. Everything on this screen —
+the KPI cards, the agent-flow Sankey diagram, the LLM cost
+histogram — is computed from real load-test data. None of it is
+mocked, none of it is hard-coded.
+
+That's how we know the system works. Not because we wrote a
+confident README. Because we have the receipts."
 
 **What to say.** "Every PR review emits four event types to a JSONL
 file: one `pr_review` event per PR with counts and severities, one
@@ -413,17 +569,38 @@ time, but not real-time.
 **Big idea.** Show the system actually working. 2:38 of recording
 already plays muted on loop on the slide.
 
-**Killer opener (10 lines — let the video carry the room).**
-1. "Enough slides. Let's see it run.
-2.  This is an unedited recording from yesterday. No retakes. No cuts. Real PR, real repo.
-3.  I'm opening a buggy pull request on python-simple-webapp — our demo target.
-4.  Watch the terminal in the middle — that's the watcher detecting the new PR within 20 seconds.
-5.  Now the pipeline kicks off. Orchestrator. Security. Bug. Style. Triage. Patch. Tests.
-6.  On the left — the agent's comment appears on the PR. CWE numbers cited. Severity grouped.
-7.  Bottom right — a second pull request gets opened. That's the agent committing its suggested fix to a sibling branch.
-8.  GitHub Actions kicks in — runs our health-check workflow on the patched code.
-9.  And the dashboard on the right ticks up — PR count, findings, cost. Live.
-10. Total elapsed time, end to end: about 90 seconds."
+**Opening — say this as one connected story, not a list.**
+
+"Enough slides. Let's see it actually run.
+
+What you're watching on the screen right now is an unedited
+recording from yesterday. No retakes, no cuts, no clever editing.
+A real pull request, on a real GitHub repository, reviewed by the
+real system.
+
+I'm opening a buggy pull request on python-simple-webapp — that's
+our demo target, a small Flask app we maintain specifically so we
+can throw bad code at it.
+
+Watch the terminal in the middle of the screen. That's the watcher
+detecting the new pull request within about twenty seconds of it
+being opened. Once it detects it, the pipeline kicks off, and you
+can see each node logging as it runs — orchestrator, security,
+bug, style, triage, patch, tests.
+
+On the left side of the screen, the agent's review comment appears
+on the pull request. Notice the CWE numbers cited, the severity
+grouping, the actionable recommendations. On the bottom right, a
+second pull request gets opened automatically — that's the agent
+committing its suggested fix to a sibling branch.
+
+GitHub Actions then kicks in and runs our health-check workflow on
+the patched code, verifying the fix doesn't break anything. And in
+the dashboard on the right, you can see the PR count, the findings
+count, and the cost number all tick up in real time.
+
+Total elapsed time, from opening the buggy PR to the follow-up PR
+being ready to merge — about ninety seconds."
 
 **What to say.** "What you're seeing is a real recording from
 yesterday. I'm opening a buggy PR on a real GitHub repo —
@@ -456,17 +633,36 @@ demo; we haven't run it for weeks unattended.
 
 **Big idea.** 30 PRs, 0 failures, real numbers.
 
-**Killer opener (10 lines — let the receipts speak).**
-1. "Anyone can build a demo that works once. We wanted to know if it works thirty times in a row.
-2.  So we built a load-test driver. Thirty deliberately-buggy pull requests, opened sequentially against a real Airflow fork on GitHub.
-3.  Ten security templates. Ten bug templates. Five performance. Five style.
-4.  Every template hand-curated. So we know exactly what each one should catch.
-5.  We hit go. Walked away. Came back in about 50 minutes.
-6.  Thirty out of thirty reviewed. Zero failures. Zero crashes.
-7.  Median time per PR: 59.5 seconds. The slowest one took 92 seconds.
-8.  Total findings across the run: 627 — that's an average of 21 issues spotted per PR.
-9.  Twenty-four of the thirty correctly triggered the human-review branch — flagged a Critical or High security finding.
-10. Total cost in OpenAI tokens: four dollars and fifty-six cents. For the whole run."
+**Opening — say this as one connected story, not a list.**
+
+"Anyone can build a demo that works once. The harder question is —
+does it still work the thirtieth time in a row? So we built a load
+test to answer that question for ourselves.
+
+The setup is straightforward. We wrote a driver that opens thirty
+deliberately-buggy pull requests, sequentially, against a real
+Airflow fork on GitHub. Ten of those PRs plant security issues,
+ten plant bugs, five plant performance problems, and five plant
+style issues. Every template is hand-curated, which means we know
+in advance exactly what kind of finding each one should produce.
+
+We hit go. We walked away. We came back about fifty minutes later.
+
+The results are on the screen. Thirty out of thirty pull requests
+were reviewed. Zero failures. Zero crashes. The median review took
+59.5 seconds — well under our one-minute target. The slowest
+single PR took 92 seconds.
+
+The pipeline produced 627 total findings across the run — an
+average of 21 issues spotted per pull request. Twenty-four of the
+thirty PRs correctly triggered the human-review branch, because
+they contained Critical or High severity security findings. And
+the total OpenAI cost for the entire load test was four dollars
+and fifty-six cents.
+
+That's the receipt. Not a projection, not a marketing figure — the
+actual number from runs/events.jsonl, which is in the repo and
+queryable right now."
 
 **What to say.** "We built a load test to validate the pipeline
 under realistic conditions. The load_test driver opens 30
@@ -500,17 +696,41 @@ floor, not a ceiling.
 **Big idea.** Honest measurement. We measure recall on planted
 bugs, not precision.
 
-**Killer opener (10 lines — claim the number, then own the caveat).**
-1. "Anyone can claim their system catches bugs. We wanted a measured answer.
-2.  Each of our 30 load-test templates plants a specific bug we control.
-3.  SQL injection is in the Security category. Mutable-default-argument is Bug. Quadratic-string-concat is Performance.
-4.  We ask one question: did the pipeline produce at least one finding in the expected category?
-5.  Across all 30 templates: yes. Every single one. 100% recall.
-6.  Broken down: 10 of 10 Security caught. 10 of 10 Bug caught. 5 of 5 Performance. 6 of 6 Style.
-7.  Now — be honest. We don't measure precision here. Why?
-8.  Because each PR also touches real Airflow code, which has its own legitimate findings. And we don't have ground truth for those.
-9.  Spot-checks on 8 templates — 7 cited the exact correct CWE. That's a sample, not a measurement.
-10. The 100% recall claim is a floor on a benchmark we designed. It proves textbook bugs get caught. Real-world precision is a separate study."
+**Opening — say this as one connected story, not a list.**
+
+"Anyone can claim their system catches bugs. We wanted a measured
+answer to that question, not a confident one.
+
+Here's how the evaluation works. Each of our thirty load-test
+templates plants a specific kind of bug, in a specific category,
+and we know in advance which category it should fall into. SQL
+injection should be flagged as Security. A mutable default
+argument should be flagged as Bug. A quadratic string concatenation
+should be flagged as Performance.
+
+We ask one simple question of every run — did the pipeline produce
+at least one finding in the expected category?
+
+Across all thirty templates, the answer was yes. Every single one.
+That's 100 percent recall — ten of ten Security caught, ten of ten
+Bug caught, five of five Performance, and six of six Style. The
+numbers on the slide come straight from our eval scorer.
+
+Now, I want to be honest about what this measures and what it
+doesn't. We deliberately don't measure precision in this benchmark.
+The reason is that each pull request also touches real Airflow
+code, which has its own legitimate findings — and we don't have
+ground truth on those. So we can't compute false-positive rates
+without a labeled corpus, which is a separate study.
+
+Hand spot-checks on eight templates confirm that seven out of
+eight cited the exact correct CWE. That's a sample, not a full
+measurement.
+
+So when you see the '100 percent recall' claim on this slide, what
+it actually means is — on a benchmark we designed, the pipeline
+catches every textbook bug pattern. It's a floor, not a ceiling.
+Real-world precision is the next study."
 
 **What to say.** "Each load-test template plants a bug we know the
 category of — SQL injection is Security, mutable default arg is
@@ -543,17 +763,46 @@ we designed — phrasing matters.
 **Big idea.** Five concrete bugs from the load test, not curated
 demos. Receipts for the claims on earlier slides.
 
-**Killer opener (10 lines — five real bugs, five real receipts).**
-1. "Time for receipts. Five real bugs the agent caught on a real Airflow fork.
-2.  Number one — SQL injection. CWE-89. The agent flagged the string-concatenated query and suggested parameterized binding.
-3.  Number two — hardcoded API key. CWE-798. The agent recognized the sk_live_ prefix as a real-looking Stripe key, not a placeholder.
-4.  Number three — mutable default argument. That Python-specific footgun where a list default is shared across function calls.
-5.  Number four — quadratic string concatenation in a loop. Performance category. The agent caught the algorithmic anti-pattern, not just the syntax.
-6.  Number five is the interesting one — pathological cyclomatic complexity.
-7.  Radon flagged the function's complexity metric — score of 14, way over the threshold.
-8.  And on the same function, GPT-4o flagged a semantic gap in the region check.
-9.  Two different agents independently identified the same function was worth attention.
-10. Every card on this slide links to a full write-up in the case_studies folder of the repo. These aren't curated demos."
+**Opening — say this as one connected story, not a list.**
+
+"It's one thing to claim the system works. It's another to show
+you what it actually caught. So this slide is five real bugs,
+caught on a real Airflow fork, with verbatim agent comments in the
+repo if you want to read them.
+
+Let me walk through them.
+
+The first one is SQL injection. The agent flagged a
+string-concatenated query in a Python file, cited CWE-89, and
+recommended switching to parameterized binding. The second is a
+hardcoded API key. The agent recognized the 'sk_live_' prefix as a
+real-looking Stripe key, cited CWE-798, and recommended moving the
+secret to environment variables. Not a placeholder — it could pass
+a casual code review.
+
+The third is a mutable default argument — that classic
+Python-specific footgun where a function defaults a parameter to
+an empty list, and the same list gets shared across every call.
+The agent caught it and explained why it's a bug, not just an
+anti-pattern.
+
+The fourth is a quadratic string concatenation in a loop. This is
+the case we covered in detail earlier — a function that works
+correctly but does five hundred times more work than necessary,
+because of how Python handles string immutability. The agent
+flagged it as a performance issue and suggested the one-line fix.
+
+The fifth one is the most interesting. It's a function with
+pathological cyclomatic complexity. Radon — our static analyzer —
+flagged the structural metric, with a complexity score of 14, way
+over the threshold. And on the same function, GPT-4o independently
+flagged a semantic gap in the region-check logic. Two different
+agents looking at the same code through different lenses, both
+flagging it as worth attention.
+
+Every card on this slide links to a full write-up in the
+case_studies folder of the repo. None of these are curated demos.
+They're what the agent actually produced."
 
 **What to say.** "Five real bugs the pipeline caught on a real
 Airflow fork. SQL injection — CWE-89, agent flagged the string
@@ -589,17 +838,39 @@ agreed the function had a problem — not the exact same bug.
 **Big idea.** Three measurable goals we'd chase if this were
 ongoing. Honest about gaps.
 
-**Killer opener (10 lines — three measurable goals, no fluff).**
-1. "If this were a product instead of a capstone, here's what we'd ship next.
-2.  Three goals. All measurable. No vague aspirations.
-3.  Goal one — speed. Today's p95 latency is 93 seconds. Target: under 30.
-4.  How? Parallelize across PRs. Route lighter agents — style, performance — through GPT-4o-mini.
-5.  Goal two — languages. Right now the pipeline reads Python only.
-6.  Tree-sitter already supports Java, JavaScript, Go, and Rust. The agent prompts need language-specific tuning, not a rewrite.
-7.  Goal three — cost. Today it's fourteen cents per PR. Target: under a nickel.
-8.  Cheaper model for low-severity findings. Reserve GPT-4o for security and Critical/High bugs.
-9.  None of these are research problems. They're engineering work we'd ship in a real product.
-10. What's NOT on this list? Precision. Because we haven't measured it yet — and we won't claim a target for a number we don't have."
+**Opening — say this as one connected story, not a list.**
+
+"If this were a real product instead of a capstone project, here's
+what we'd ship next. Three goals — all measurable, no vague
+aspirations. Each one has a number we measured today and a target
+we'd chase.
+
+The first goal is speed. Today, our 95th-percentile latency is 93
+seconds. The target is to get that under 30. The path is twofold —
+parallelize across pull requests, so multiple PRs can be reviewed
+at the same time, and route the lighter agents like style and
+performance through GPT-4o-mini instead of full GPT-4o.
+
+The second goal is languages. Right now the pipeline reads Python
+only. But tree-sitter — the parser we use — already supports Java,
+JavaScript, Go, and Rust out of the box. What's needed is
+language-specific prompt tuning, not a full rewrite. We could add
+Java support, for instance, in a couple of weeks.
+
+The third goal is cost. Today, each pull request costs about
+fourteen cents to review. The target is to get that under a
+nickel. The same idea applies — use a cheaper model for low-severity
+findings, and reserve GPT-4o for security and Critical or High
+severity bugs where quality matters most.
+
+None of these are research problems. They're engineering work we'd
+ship in a real product release.
+
+One thing you'll notice is not on this list — precision. And
+that's deliberate. We haven't measured precision yet, and we're
+not going to claim a target for a number we don't have. The right
+next step there is a labeled real-world PR corpus, which is a
+separate study entirely."
 
 **What to say.** "Three goals worth pursuing. Speed — get the p95
 latency from 93 seconds today to under 30, by parallelizing across
@@ -630,17 +901,35 @@ operational commitment.
 **Big idea.** Open the floor. Show the repo URL prominently so the
 judges can click through.
 
-**Killer opener (10 lines — close strong, open the floor).**
-1. "That's the whole system, end to end.
-2.  Six engineers. One open-source repo. Five AI agents. One typed contract between them.
-3.  Thirty PRs reviewed, zero failures, four dollars and fifty-six cents.
-4.  A real follow-up PR for every fix. A real dashboard with real telemetry. Real receipts.
-5.  Repo URL is on the slide. The deck you just watched is in that repo, served via GitHub Pages.
-6.  Every number we showed comes from runs/events.jsonl or load_test/status.json. No hand-waving.
-7.  The case studies on slide 13 each link to a verbatim agent comment if you want to see exactly what was generated.
-8.  We're happy to take questions on any agent, any design decision, the load test, the dashboard — anything.
-9.  And if a question goes deeper than this deck, we'll tell you the honest limit — what we measured and what we didn't.
-10. Floor's open."
+**Opening — say this as one connected story, not a list.**
+
+"That's the whole system, end to end. Let me close with a quick
+recap before we open the floor.
+
+Six engineers, one open-source repository, five AI agents, and one
+typed contract holding them together. Thirty pull requests reviewed
+in our load test. Zero failures. Four dollars and fifty-six cents in
+total OpenAI spend. A real follow-up pull request for every fix
+suggested. A real dashboard with real telemetry. Real receipts for
+every number we showed you tonight.
+
+The repository link is on this slide. The deck you just watched is
+in that repository, served via GitHub Pages. Every number we
+quoted comes from either runs/events.jsonl or load_test/status.json
+— both of which are in the repo, and both of which you can verify.
+No hand-waving.
+
+If you want to see exactly what the agent produced on a specific
+case, the case studies linked from slide 13 each have a verbatim
+agent comment alongside the buggy code and the suggested fix.
+
+We're happy to take questions on any agent, any of the design
+decisions, the load test, the dashboard — anything we covered. And
+if a question goes deeper than this deck, we'll tell you the honest
+limit. What we measured, what we didn't, and what would change our
+answer.
+
+The floor is yours."
 
 **What to say.** "That's everything we built. Repo URL is at the
 top — slide deck is in there too, served via GitHub Pages.
