@@ -110,7 +110,7 @@ and the agent's suggested fix shows up as a follow-up PR a reviewer
 can merge or reject."
 
 **What to point at.** The "~1 min" tile, the "$0.14" tile, the
-animated 6-agents stamp in the top-right corner.
+animated 5-agents stamp in the top-right corner.
 
 **Likely judge question.** *"How is this different from Copilot's PR
 review or other LLM code reviewers?"* Honest answer: three concrete
